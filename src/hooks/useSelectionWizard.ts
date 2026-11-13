@@ -112,6 +112,7 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
 
       const payload = {
         formId: form.id,
+        formSlug: form.slug,
         draftToken: token,
         applicantName,
         applicantEmail,

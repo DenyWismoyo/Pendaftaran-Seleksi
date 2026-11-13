@@ -73,6 +73,8 @@ export default function SubmissionToolbar({
               className="px-2 py-1 rounded-lg border border-zinc-200 bg-white text-xs"
             >
               <option value="REVIEWING">Dalam Peninjauan</option>
+              <option value="NEEDS_REVISION">Perlu Perbaikan Berkas</option>
+              <option value="INTERVIEW">Tahap Wawancara</option>
               <option value="ACCEPTED">Lolos Seleksi</option>
               <option value="REJECTED">Tidak Lolos</option>
             </select>

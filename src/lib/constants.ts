@@ -43,9 +43,17 @@ export const SUBMISSION_STATUS_META = {
     label: 'Menunggu Verifikasi',
     badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
   },
+  NEEDS_REVISION: {
+    label: 'Perlu Perbaikan Berkas',
+    badgeClass: 'bg-orange-50 text-orange-800 border-orange-200',
+  },
   REVIEWING: {
     label: 'Dalam Peninjauan',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  INTERVIEW: {
+    label: 'Tahap Wawancara / Uji Gagasan',
+    badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   },
   ACCEPTED: {
     label: 'Lolos Seleksi',

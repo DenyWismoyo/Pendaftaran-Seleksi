@@ -6,9 +6,13 @@ import {
   FileCheck2,
   FileText,
   Loader2,
+  Printer,
 } from 'lucide-react';
+import PanelRubricCard from '@/components/admin/PanelRubricCard';
+import { printApplicantDossier } from '@/lib/submissionExport';
 import { formatBytes, formatDateID } from '@/lib/utils';
 import {
+  PanelScoreInput,
   SelectionForm,
   SelectionSubmission,
   SubmissionStatus,
@@ -21,12 +25,18 @@ interface SubmissionDetailPanelProps {
   evaluatingAi: boolean;
   reviewStatus: SubmissionStatus;
   reviewerNote: string;
+  revisionFields: string[];
+  interviewSchedule: string;
   savingReview: boolean;
+  savingScore: boolean;
   onEvaluateAi: () => void;
   onPreviewFile: (file: UploadedFileMeta) => void;
   onReviewStatusChange: (status: SubmissionStatus) => void;
   onReviewerNoteChange: (note: string) => void;
+  onToggleRevisionField: (fieldId: string) => void;
+  onInterviewScheduleChange: (val: string) => void;
   onSaveReview: () => void;
+  onSavePanelScore: (input: PanelScoreInput) => Promise<void>;
 }
 
 export default function SubmissionDetailPanel({
@@ -35,12 +45,18 @@ export default function SubmissionDetailPanel({
   evaluatingAi,
   reviewStatus,
   reviewerNote,
+  revisionFields,
+  interviewSchedule,
   savingReview,
+  savingScore,
   onEvaluateAi,
   onPreviewFile,
   onReviewStatusChange,
   onReviewerNoteChange,
+  onToggleRevisionField,
+  onInterviewScheduleChange,
   onSaveReview,
+  onSavePanelScore,
 }: SubmissionDetailPanelProps) {
   return (
     <div className="lg:col-span-7 ui-card p-5 sm:p-6 space-y-6">
@@ -58,23 +74,35 @@ export default function SubmissionDetailPanel({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onEvaluateAi}
-          disabled={evaluatingAi}
-          className="ui-btn-secondary bg-zinc-50 px-3.5 py-2 text-xs hover:bg-zinc-100"
-        >
-          {evaluatingAi ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <FileCheck2 className="w-3.5 h-3.5 text-zinc-600" />
-          )}
-          <span>
-            {submission.aiEvaluation
-              ? 'Perbarui Ringkasan Skor'
-              : 'Ringkas & Skor Profil'}
-          </span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => printApplicantDossier(submission, formDef)}
+            className="ui-btn-secondary px-3 py-2 text-xs"
+            title="Cetak dossier lengkap pelamar untuk rapat panitia"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Cetak Dossier</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onEvaluateAi}
+            disabled={evaluatingAi}
+            className="ui-btn-secondary bg-zinc-50 px-3.5 py-2 text-xs hover:bg-zinc-100"
+          >
+            {evaluatingAi ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileCheck2 className="w-3.5 h-3.5 text-zinc-600" />
+            )}
+            <span>
+              {submission.aiEvaluation
+                ? 'Perbarui Ringkasan Skor'
+                : 'Ringkas & Skor Profil'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {submission.aiEvaluation && (
@@ -104,6 +132,13 @@ export default function SubmissionDetailPanel({
           )}
         </div>
       )}
+
+      <PanelRubricCard
+        panelScores={submission.panelScores || []}
+        averagePanelScore={submission.averagePanelScore}
+        savingScore={savingScore}
+        onSaveScore={onSavePanelScore}
+      />
 
       {/* Jawaban Formulir */}
       <div className="space-y-3">
@@ -191,7 +226,9 @@ export default function SubmissionDetailPanel({
             className="ui-input bg-white"
           >
             <option value="SUBMITTED">Menunggu Verifikasi</option>
+            <option value="NEEDS_REVISION">Perlu Perbaikan Berkas</option>
             <option value="REVIEWING">Dalam Peninjauan</option>
+            <option value="INTERVIEW">Tahap Wawancara / Uji Gagasan</option>
             <option value="ACCEPTED">Lolos Seleksi</option>
             <option value="REJECTED">Tidak Lolos</option>
           </select>
@@ -207,6 +244,43 @@ export default function SubmissionDetailPanel({
           </button>
         </div>
 
+        {reviewStatus === 'NEEDS_REVISION' && submission.files.length > 0 && (
+          <div className="ui-callout-amber space-y-2">
+            <p className="text-xs font-bold">
+              Pilih berkas yang perlu diunggah ulang pelamar:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {submission.files.map((file) => {
+                const checked = revisionFields.includes(file.fieldId);
+                return (
+                  <label
+                    key={file.fieldId}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-xs font-medium cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleRevisionField(file.fieldId)}
+                      className="rounded accent-zinc-900"
+                    />
+                    <span>{file.fieldLabel}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {reviewStatus === 'INTERVIEW' && (
+          <input
+            type="text"
+            value={interviewSchedule}
+            onChange={(e) => onInterviewScheduleChange(e.target.value)}
+            placeholder="Jadwal & lokasi/tautan wawancara (mis. Senin 24 Nov 2026, 09.00 WIB, Ruang Rapat STP)"
+            className="ui-input text-xs sm:text-sm"
+          />
+        )}
+
         <textarea
           rows={2}
           value={reviewerNote}
@@ -218,4 +292,3 @@ export default function SubmissionDetailPanel({
     </div>
   );
 }
-

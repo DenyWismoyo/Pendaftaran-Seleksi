@@ -1,15 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
-import { callClarioChat, CLARIO_MODELS, extractJsonFromAi } from '@/lib/clario';
+import { callGeminiLite, extractJsonFromAi } from '@/lib/gemini';
 import { COLLECTIONS } from '@/lib/constants';
 import { evaluateSubmissionWithAi } from '@/lib/aiEvaluator';
+import { assertAllowedAppOrigin, checkRateLimit } from '@/lib/security';
 import { SelectionField, SelectionForm, SelectionSubmission } from '@/types/selection';
 import { slugify } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
+  const originCheck = assertAllowedAppOrigin(req);
+  if (!originCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: originCheck.reason },
+      { status: 403 }
+    );
+  }
+
   const admin = await verifyAdminRequest(req);
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rate = checkRateLimit(`ai:${admin.uid}`, 20, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Terlalu banyak permintaan evaluasi. Coba lagi dalam ${rate.retryAfterSeconds} detik.`,
+      },
+      { status: 429 }
+    );
   }
 
   try {
@@ -55,10 +75,11 @@ Kembalikan HANYA JSON valid dengan struktur:
 }
 Catatan: Nama lengkap, email, dan nomor WhatsApp sudah otomatis tersedia di header form, jadi fokus pada field seleksi spesifik dan minimal 2 field bertipe "file" untuk upload berkas.`;
 
-      const raw = await callClarioChat({
-        model: CLARIO_MODELS.FAST_REASONING,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
+      const raw = await callGeminiLite({
+        prompt,
+        temperature: 0.25,
+        maxOutputTokens: 3200,
+        jsonOutput: true,
       });
 
       const parsed = extractJsonFromAi<{
@@ -123,12 +144,11 @@ Catatan: Nama lengkap, email, dan nomor WhatsApp sudah otomatis tersedia di head
     }
 
     return NextResponse.json(
-      { success: false, error: 'Aksi AI tidak dikenali.' },
+      { success: false, error: 'Aksi asisten tidak dikenali.' },
       { status: 400 }
     );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Gagal memproses permintaan AI.';
+    const message = err instanceof Error ? err.message : 'Gagal memproses permintaan evaluasi.';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
-

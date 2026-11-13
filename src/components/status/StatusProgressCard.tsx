@@ -1,26 +1,51 @@
 'use client';
 
-import { FileCheck2 } from 'lucide-react';
+import { CalendarClock, FileCheck2 } from 'lucide-react';
+import RevisionUploadPanel from '@/components/status/RevisionUploadPanel';
 import StatusMilestoneTimeline from '@/components/status/StatusMilestoneTimeline';
 import { SubmissionStatus } from '@/types/selection';
 import { formatBytes } from '@/lib/utils';
 
 interface StatusProgressCardProps {
+  formId?: string;
+  registrationCode: string;
+  applicantEmail: string;
   status: SubmissionStatus;
   reviewerNote?: string;
-  files: { fieldLabel: string; fileName: string; size: number }[];
+  revisionFields?: string[];
+  interviewSchedule?: string;
+  files: { fieldId?: string; fieldLabel: string; fileName: string; size: number }[];
+  onRevisionSubmitted: () => void;
 }
 
 export default function StatusProgressCard({
+  formId,
+  registrationCode,
+  applicantEmail,
   status,
   reviewerNote,
+  revisionFields = [],
+  interviewSchedule,
   files,
+  onRevisionSubmitted,
 }: StatusProgressCardProps) {
   return (
     <section className="no-print ui-card p-5 sm:p-6 space-y-5">
       <h2 className="ui-eyebrow">Progres Tahapan Seleksi</h2>
 
       <StatusMilestoneTimeline status={status} />
+
+      {status === 'INTERVIEW' && interviewSchedule && (
+        <div className="ui-callout-emerald flex items-start gap-2.5">
+          <CalendarClock className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold block">
+              Jadwal Wawancara / Uji Gagasan:
+            </span>
+            <p className="text-xs sm:text-sm">{interviewSchedule}</p>
+          </div>
+        </div>
+      )}
 
       {reviewerNote && (
         <div className="ui-inset space-y-1">
@@ -29,6 +54,17 @@ export default function StatusProgressCard({
           </span>
           <p className="text-sm text-zinc-900">{reviewerNote}</p>
         </div>
+      )}
+
+      {status === 'NEEDS_REVISION' && formId && (
+        <RevisionUploadPanel
+          formId={formId}
+          registrationCode={registrationCode}
+          applicantEmail={applicantEmail}
+          revisionFields={revisionFields}
+          existingFiles={files}
+          onRevisionSubmitted={onRevisionSubmitted}
+        />
       )}
 
       {files.length > 0 && (
@@ -57,4 +93,3 @@ export default function StatusProgressCard({
     </section>
   );
 }
-

@@ -11,13 +11,16 @@ import { SubmissionStatus } from '@/types/selection';
 
 interface TrackingResult {
   id: string;
+  formId?: string;
   registrationCode: string;
   formTitle: string;
   applicantName: string;
   applicantEmail: string;
   status: SubmissionStatus;
   reviewerNote: string;
-  files: { fieldLabel: string; fileName: string; size: number }[];
+  revisionFields?: string[];
+  interviewSchedule?: string;
+  files: { fieldId?: string; fieldLabel: string; fileName: string; size: number }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -97,9 +100,17 @@ function CekStatusContent() {
           />
 
           <StatusProgressCard
+            formId={result.formId}
+            registrationCode={result.registrationCode}
+            applicantEmail={result.applicantEmail}
             status={result.status}
             reviewerNote={result.reviewerNote}
+            revisionFields={result.revisionFields}
+            interviewSchedule={result.interviewSchedule}
             files={result.files}
+            onRevisionSubmitted={() =>
+              checkStatus(result.registrationCode, result.applicantEmail)
+            }
           />
         </div>
       )}

@@ -5,7 +5,9 @@ import { cn } from '@/lib/utils';
 interface StatusCounts {
   ALL: number;
   SUBMITTED: number;
+  NEEDS_REVISION: number;
   REVIEWING: number;
+  INTERVIEW: number;
   ACCEPTED: number;
   REJECTED: number;
 }
@@ -22,15 +24,17 @@ export default function SubmissionPipelineTabs({
   onSelect,
 }: SubmissionPipelineTabsProps) {
   const tabs = [
-    { key: 'ALL', label: 'Semua Pelamar', count: counts.ALL },
+    { key: 'ALL', label: 'Semua', count: counts.ALL },
     { key: 'SUBMITTED', label: 'Menunggu', count: counts.SUBMITTED },
+    { key: 'NEEDS_REVISION', label: 'Perbaikan', count: counts.NEEDS_REVISION },
     { key: 'REVIEWING', label: 'Ditinjau', count: counts.REVIEWING },
+    { key: 'INTERVIEW', label: 'Wawancara', count: counts.INTERVIEW },
     { key: 'ACCEPTED', label: 'Lolos', count: counts.ACCEPTED },
     { key: 'REJECTED', label: 'Tidak Lolos', count: counts.REJECTED },
   ];
 
   return (
-    <div className="ui-mobile-pad grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
+    <div className="ui-mobile-pad grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {tabs.map((tab) => (
         <button
           key={tab.key}
@@ -43,11 +47,10 @@ export default function SubmissionPipelineTabs({
               : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
           )}
         >
-          <p className="text-[11px] font-semibold opacity-80">{tab.label}</p>
+          <p className="text-[11px] font-semibold opacity-80 truncate">{tab.label}</p>
           <p className="text-xl font-bold font-mono mt-0.5">{tab.count}</p>
         </button>
       ))}
     </div>
   );
 }
-

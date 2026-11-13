@@ -6,9 +6,25 @@ import {
   SelectionDraftPayloadSchema,
 } from '@/types/selection';
 import { generateDraftToken } from '@/lib/utils';
+import {
+  assertAllowedAppOrigin,
+  checkRateLimit,
+  getClientIp,
+} from '@/lib/security';
+
+const DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 hari retensi
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`draft-get:${ip}`, 40, 60_000);
+    if (!rate.ok) {
+      return NextResponse.json(
+        { success: false, error: 'Terlalu banyak permintaan memuat draf.' },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const token = searchParams.get('token')?.trim().toUpperCase();
     const formId = searchParams.get('formId')?.trim();
@@ -59,6 +75,23 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const originCheck = assertAllowedAppOrigin(req);
+  if (!originCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: originCheck.reason },
+      { status: 403 }
+    );
+  }
+
+  const ip = getClientIp(req);
+  const rate = checkRateLimit(`draft-save:${ip}`, 45, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { success: false, error: 'Terlalu banyak permintaan simpan draf.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = SelectionDraftPayloadSchema.safeParse(body);
@@ -74,7 +107,9 @@ export async function POST(req: NextRequest) {
     const token = (payload.draftToken || generateDraftToken()).trim().toUpperCase();
     const docRef = db.collection(COLLECTIONS.DRAFTS).doc(token);
     const existing = await docRef.get();
-    const now = new Date().toISOString();
+    const nowDate = new Date();
+    const now = nowDate.toISOString();
+    const expiresAt = new Date(nowDate.getTime() + DRAFT_TTL_MS).toISOString();
 
     if (existing.exists && existing.data()?.status === 'SUBMITTED') {
       return NextResponse.json(
@@ -87,6 +122,7 @@ export async function POST(req: NextRequest) {
       ...payload,
       draftToken: token,
       status: 'IN_PROGRESS',
+      expiresAt,
       createdAt: existing.exists ? String(existing.data()?.createdAt || now) : now,
       updatedAt: now,
     };
@@ -98,6 +134,7 @@ export async function POST(req: NextRequest) {
       data: {
         draftToken: token,
         updatedAt: now,
+        expiresAt,
       },
     });
   } catch (err: unknown) {
@@ -110,4 +147,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

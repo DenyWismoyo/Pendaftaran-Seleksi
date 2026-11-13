@@ -17,6 +17,7 @@
 - **SR-010 (Print-Friendly Pass):** Komponen bukti registrasi wajib mempertahankan kelas `.no-print` dan `.print-only-card` agar kartu QR tetap tercetak rapi lewat `window.print()`.
 
 ## 4. Arsitektur Modular & Verifikasi Sebelum Commit / Push
-- **SR-011:** Setiap perubahan wajib lolos `npx tsc --noEmit` dan `npm run build` tanpa error.
+- **SR-011:** Setiap perubahan wajib lolos `npx tsc --noEmit`, `npm test` (Vitest), dan `npm run build` tanpa error.
 - **SR-012 (Page Tipis & Komponen Spesifik):** File `src/app/**/page.tsx` wajib ringkas (`<= 200` baris) — fokus pada import, orkestrasi state/logika, dan komposisi komponen. Pecah bagian UI ke subfolder domain di `src/components/<fitur>/` (`home/`, `templates/`, `status/`, `seleksi/`, `admin/`) serta logika kompleks ke custom hook di `src/hooks/`.
+- **SR-013 (AI & Keamanan Origin):** Fitur evaluasi AI wajib melalui `src/lib/gemini.ts` menggunakan Google AI Studio model varian **Lite** (`gemini-3.5-flash-lite`), tidak boleh memakai Clario atau model non-lite. Endpoint API mutasi & AI wajib memverifikasi asal permintaan via `assertAllowedAppOrigin()` (`https://pendaftaran-seleksi.vercel.app`) dan rate limiting di `src/lib/security.ts`.
 

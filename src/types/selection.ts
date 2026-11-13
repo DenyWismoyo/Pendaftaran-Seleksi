@@ -19,7 +19,9 @@ export type SelectionFormStatus = z.infer<typeof SelectionFormStatusEnum>;
 
 export const SubmissionStatusEnum = z.enum([
   'SUBMITTED',
+  'NEEDS_REVISION',
   'REVIEWING',
+  'INTERVIEW',
   'ACCEPTED',
   'REJECTED',
 ]);
@@ -90,6 +92,28 @@ export const AiEvaluationSchema = z.object({
 });
 export type AiEvaluation = z.infer<typeof AiEvaluationSchema>;
 
+export const PanelScoreSchema = z.object({
+  evaluatorEmail: z.string(),
+  evaluatorName: z.string().default(''),
+  adminScore: z.number().min(0).max(100),
+  trackRecordScore: z.number().min(0).max(100),
+  conceptScore: z.number().min(0).max(100),
+  interviewScore: z.number().min(0).max(100),
+  totalScore: z.number().min(0).max(100),
+  note: z.string().optional().default(''),
+  scoredAt: z.string(),
+});
+export type PanelScore = z.infer<typeof PanelScoreSchema>;
+
+export const PanelScoreInputSchema = z.object({
+  adminScore: z.number().min(0).max(100),
+  trackRecordScore: z.number().min(0).max(100),
+  conceptScore: z.number().min(0).max(100),
+  interviewScore: z.number().min(0).max(100),
+  note: z.string().optional().default(''),
+});
+export type PanelScoreInput = z.infer<typeof PanelScoreInputSchema>;
+
 export const SelectionSubmissionSchema = z.object({
   id: z.string(),
   registrationCode: z.string(),
@@ -99,13 +123,18 @@ export const SelectionSubmissionSchema = z.object({
   applicantName: z.string().min(2),
   applicantEmail: z.string().email(),
   applicantPhone: z.string().min(6),
+  applicantNik: z.string().optional(),
   answers: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])),
   files: z.array(UploadedFileMetaSchema).default([]),
   status: SubmissionStatusEnum.default('SUBMITTED'),
   reviewerNote: z.string().optional().default(''),
+  revisionFields: z.array(z.string()).optional().default([]),
+  interviewSchedule: z.string().optional().default(''),
   reviewedBy: z.string().optional().default(''),
   reviewedAt: z.string().optional().default(''),
   aiEvaluation: AiEvaluationSchema.optional(),
+  panelScores: z.array(PanelScoreSchema).optional().default([]),
+  averagePanelScore: z.number().min(0).max(100).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -122,10 +151,17 @@ export const CreateSubmissionPayloadSchema = z.object({
 });
 export type CreateSubmissionPayload = z.infer<typeof CreateSubmissionPayloadSchema>;
 
+export const ReviseSubmissionPayloadSchema = z.object({
+  registrationCode: z.string().min(4),
+  applicantEmail: z.string().email(),
+  files: z.array(UploadedFileMetaSchema).min(1, 'Unggah minimal satu berkas perbaikan.'),
+});
+export type ReviseSubmissionPayload = z.infer<typeof ReviseSubmissionPayloadSchema>;
+
 export const SelectionDraftPayloadSchema = z.object({
   draftToken: z.string().optional(),
   formId: z.string().min(1),
-  formSlug: z.string().min(1),
+  formSlug: z.string().optional().default(''),
   applicantName: z.string().optional().default(''),
   applicantEmail: z.string().optional().default(''),
   applicantPhone: z.string().optional().default(''),
@@ -140,6 +176,7 @@ export type SelectionDraftPayload = z.infer<typeof SelectionDraftPayloadSchema>;
 export interface SelectionDraft extends SelectionDraftPayload {
   draftToken: string;
   status: 'IN_PROGRESS' | 'SUBMITTED';
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }

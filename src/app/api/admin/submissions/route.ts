@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
 import { SelectionSubmission, SubmissionStatusEnum } from '@/types/selection';
+import { dispatchApplicantNotification } from '@/lib/notifications';
+import { assertAllowedAppOrigin } from '@/lib/security';
 import { z } from 'zod';
 
 const UpdateSubmissionSchema = z.object({
@@ -9,6 +11,8 @@ const UpdateSubmissionSchema = z.object({
   ids: z.array(z.string().min(1)).optional(),
   status: SubmissionStatusEnum,
   reviewerNote: z.string().optional().default(''),
+  revisionFields: z.array(z.string()).optional(),
+  interviewSchedule: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -44,6 +48,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const originCheck = assertAllowedAppOrigin(req);
+  if (!originCheck.allowed) {
+    return NextResponse.json({ success: false, error: originCheck.reason }, { status: 403 });
+  }
+
   const admin = await verifyAdminRequest(req);
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -59,7 +68,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { id, ids, status, reviewerNote } = parsed.data;
+    const { id, ids, status, reviewerNote, revisionFields, interviewSchedule } = parsed.data;
     const targetIds = ids && ids.length > 0 ? ids : id ? [id] : [];
 
     if (targetIds.length === 0) {
@@ -81,6 +90,12 @@ export async function PATCH(req: NextRequest) {
     if (!ids || reviewerNote.trim() !== '') {
       updatePayload.reviewerNote = reviewerNote;
     }
+    if (revisionFields !== undefined) {
+      updatePayload.revisionFields = status === 'NEEDS_REVISION' ? revisionFields : [];
+    }
+    if (interviewSchedule !== undefined) {
+      updatePayload.interviewSchedule = interviewSchedule;
+    }
 
     if (targetIds.length === 1) {
       const docRef = db.collection(COLLECTIONS.SUBMISSIONS).doc(targetIds[0]);
@@ -93,10 +108,20 @@ export async function PATCH(req: NextRequest) {
       }
       await docRef.update(updatePayload);
       const updated = await docRef.get();
-      return NextResponse.json({
-        success: true,
-        data: { id: updated.id, ...updated.data() },
+      const updatedSub = { id: updated.id, ...updated.data() } as SelectionSubmission;
+
+      await dispatchApplicantNotification({
+        event: 'STATUS_UPDATED',
+        registrationCode: updatedSub.registrationCode,
+        formTitle: updatedSub.formTitle,
+        applicantName: updatedSub.applicantName,
+        applicantEmail: updatedSub.applicantEmail,
+        applicantPhone: updatedSub.applicantPhone,
+        status: updatedSub.status,
+        reviewerNote: updatedSub.reviewerNote,
       });
+
+      return NextResponse.json({ success: true, data: updatedSub });
     }
 
     const batch = db.batch();

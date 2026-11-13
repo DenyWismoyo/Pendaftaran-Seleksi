@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { adminFetch } from '@/lib/adminClient';
 import {
   AiEvaluation,
+  PanelScore,
+  PanelScoreInput,
   SelectionForm,
   SelectionSubmission,
   SubmissionStatus,
@@ -26,9 +28,19 @@ export function useAdminSubmissions(initialFormId: string) {
 
   const [reviewStatus, setReviewStatus] = useState<SubmissionStatus>('SUBMITTED');
   const [reviewerNote, setReviewerNote] = useState('');
+  const [revisionFields, setRevisionFields] = useState<string[]>([]);
+  const [interviewSchedule, setInterviewSchedule] = useState('');
   const [savingReview, setSavingReview] = useState(false);
+  const [savingScore, setSavingScore] = useState(false);
   const [evaluatingAi, setEvaluatingAi] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadedFileMeta | null>(null);
+
+  const syncReviewInputs = (item: SelectionSubmission) => {
+    setReviewStatus(item.status);
+    setReviewerNote(item.reviewerNote || '');
+    setRevisionFields(item.revisionFields || []);
+    setInterviewSchedule(item.interviewSchedule || '');
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -47,8 +59,7 @@ export function useAdminSubmissions(initialFormId: string) {
       if (subsRes.data.length > 0 && !selectedSub) {
         const first = subsRes.data[0];
         setSelectedSub(first);
-        setReviewStatus(first.status);
-        setReviewerNote(first.reviewerNote || '');
+        syncReviewInputs(first);
       }
     }
     setLoading(false);
@@ -63,7 +74,9 @@ export function useAdminSubmissions(initialFormId: string) {
     () => ({
       ALL: submissions.length,
       SUBMITTED: submissions.filter((s) => s.status === 'SUBMITTED').length,
+      NEEDS_REVISION: submissions.filter((s) => s.status === 'NEEDS_REVISION').length,
       REVIEWING: submissions.filter((s) => s.status === 'REVIEWING').length,
+      INTERVIEW: submissions.filter((s) => s.status === 'INTERVIEW').length,
       ACCEPTED: submissions.filter((s) => s.status === 'ACCEPTED').length,
       REJECTED: submissions.filter((s) => s.status === 'REJECTED').length,
     }),
@@ -88,15 +101,25 @@ export function useAdminSubmissions(initialFormId: string) {
     [forms, selectedSub]
   );
 
+  const selectedFormFilterDef = useMemo(
+    () => forms.find((f) => f.id === selectedFormId),
+    [forms, selectedFormId]
+  );
+
   const selectSubmission = (picked: SelectionSubmission) => {
     setSelectedSub(picked);
-    setReviewStatus(picked.status);
-    setReviewerNote(picked.reviewerNote || '');
+    syncReviewInputs(picked);
   };
 
   const toggleSelectId = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleRevisionField = (fieldId: string) => {
+    setRevisionFields((prev) =>
+      prev.includes(fieldId) ? prev.filter((x) => x !== fieldId) : [...prev, fieldId]
     );
   };
 
@@ -145,6 +168,8 @@ export function useAdminSubmissions(initialFormId: string) {
           id: selectedSub.id,
           status: reviewStatus,
           reviewerNote,
+          revisionFields: reviewStatus === 'NEEDS_REVISION' ? revisionFields : [],
+          interviewSchedule: reviewStatus === 'INTERVIEW' ? interviewSchedule : '',
         }),
       });
       if (!res.success || !res.data) {
@@ -154,11 +179,46 @@ export function useAdminSubmissions(initialFormId: string) {
         prev.map((item) => (item.id === res.data!.id ? res.data! : item))
       );
       setSelectedSub(res.data);
+      syncReviewInputs(res.data);
       toast.success('Keputusan seleksi pelamar disimpan.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyimpan.');
     } finally {
       setSavingReview(false);
+    }
+  };
+
+  const handleSavePanelScore = async (input: PanelScoreInput) => {
+    if (!selectedSub) return;
+    setSavingScore(true);
+    try {
+      const res = await adminFetch<{
+        panelScores: PanelScore[];
+        averagePanelScore?: number;
+      }>('/api/admin/submissions/score', {
+        method: 'POST',
+        body: JSON.stringify({
+          submissionId: selectedSub.id,
+          ...input,
+        }),
+      });
+      if (!res.success || !res.data) {
+        throw new Error(res.error || 'Gagal menyimpan skor tim penilai.');
+      }
+      const updated: SelectionSubmission = {
+        ...selectedSub,
+        panelScores: res.data.panelScores,
+        averagePanelScore: res.data.averagePanelScore,
+      };
+      setSelectedSub(updated);
+      setSubmissions((prev) =>
+        prev.map((item) => (item.id === updated.id ? updated : item))
+      );
+      toast.success('Skor rubrik tim seleksi tersimpan.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Gagal menyimpan skor.');
+    } finally {
+      setSavingScore(false);
     }
   };
 
@@ -181,7 +241,7 @@ export function useAdminSubmissions(initialFormId: string) {
       setSubmissions((prev) =>
         prev.map((item) => (item.id === updated.id ? updated : item))
       );
-      toast.success('Ringkasan penilaian selesai.');
+      toast.success('Ringkasan penilaian Gemini Flash Lite selesai.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Gagal menganalisis.');
     } finally {
@@ -192,6 +252,7 @@ export function useAdminSubmissions(initialFormId: string) {
   return {
     forms,
     selectedFormId,
+    selectedFormFilterDef,
     statusFilter,
     setStatusFilter,
     search,
@@ -206,7 +267,12 @@ export function useAdminSubmissions(initialFormId: string) {
     setReviewStatus,
     reviewerNote,
     setReviewerNote,
+    revisionFields,
+    toggleRevisionField,
+    interviewSchedule,
+    setInterviewSchedule,
     savingReview,
+    savingScore,
     evaluatingAi,
     previewFile,
     setPreviewFile,
@@ -218,7 +284,7 @@ export function useAdminSubmissions(initialFormId: string) {
     changeFormFilter,
     handleBulkUpdate,
     handleSaveReview,
+    handleSavePanelScore,
     handleEvaluateAi,
   };
 }
-

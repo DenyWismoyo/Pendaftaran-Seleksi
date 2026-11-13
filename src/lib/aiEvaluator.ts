@@ -1,5 +1,67 @@
-import { callClarioChat, CLARIO_MODELS, extractJsonFromAi } from './clario';
+import { callGeminiLite, extractJsonFromAi, GeminiPart } from '@/lib/gemini';
+import { getAdminBucket } from '@/lib/firebaseAdmin';
 import { AiEvaluation, SelectionForm, SelectionSubmission } from '@/types/selection';
+
+const SUPPORTED_DOC_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
+
+const MAX_INLINE_DOC_BYTES = 2 * 1024 * 1024; // 2 MB per berkas untuk pemeriksaan cepat
+
+async function loadDocumentPartsForEvaluation(
+  submission: Pick<SelectionSubmission, 'files'>
+): Promise<{ parts: GeminiPart[]; inspectedLabels: string[] }> {
+  const parts: GeminiPart[] = [];
+  const inspectedLabels: string[] = [];
+
+  if (!submission.files || submission.files.length === 0) {
+    return { parts, inspectedLabels };
+  }
+
+  let bucket: ReturnType<typeof getAdminBucket> | null = null;
+  try {
+    bucket = getAdminBucket();
+  } catch {
+    return { parts, inspectedLabels };
+  }
+
+  const candidates = submission.files
+    .filter(
+      (f) =>
+        f.storagePath &&
+        SUPPORTED_DOC_MIME_TYPES.has(f.mimeType) &&
+        f.size > 0 &&
+        f.size <= MAX_INLINE_DOC_BYTES
+    )
+    .slice(0, 2);
+
+  for (const fileMeta of candidates) {
+    try {
+      const [buffer] = await bucket.file(fileMeta.storagePath).download();
+      if (buffer.byteLength <= MAX_INLINE_DOC_BYTES) {
+        parts.push({
+          text: `[Lampiran Dokumen untuk diperiksa: ${fileMeta.fieldLabel} (${fileMeta.fileName})]`,
+        });
+        parts.push({
+          inlineData: {
+            mimeType:
+              fileMeta.mimeType === 'image/jpg' ? 'image/jpeg' : fileMeta.mimeType,
+            data: buffer.toString('base64'),
+          },
+        });
+        inspectedLabels.push(fileMeta.fieldLabel);
+      }
+    } catch {
+      // Lewati jika gagal mengunduh berkas; evaluasi tetap berjalan dari metadata & jawaban
+    }
+  }
+
+  return { parts, inspectedLabels };
+}
 
 export async function evaluateSubmissionWithAi(
   form: SelectionForm,
@@ -18,8 +80,16 @@ export async function evaluateSubmissionWithAi(
     return `- ${field.label}: ${display}`;
   });
 
+  const { parts: documentParts, inspectedLabels } =
+    await loadDocumentPartsForEvaluation(submission);
+
   const prompt = `Anda adalah Ketua Panitia Seleksi Administrasi & Kompetensi.
 Evaluasi data pendaftaran berikut secara objektif, ringkas, dan dalam Bahasa Indonesia.
+${
+  inspectedLabels.length > 0
+    ? `Dokumen terlampir yang berhasil dibaca isinya: ${inspectedLabels.join(', ')}. Periksa kesesuaian nama/isi dokumen terhadap isian formulir.`
+    : ''
+}
 
 Program Seleksi: ${form.title}
 Kategori: ${form.category}
@@ -39,10 +109,11 @@ Kembalikan HANYA JSON valid (tanpa teks tambahan) dengan struktur persis berikut
   "recommendation": "DIREKOMENDASIKAN" | "PERLU_TINJAUAN" | "KURANG_SESUAI"
 }`;
 
-  const rawAi = await callClarioChat({
-    model: CLARIO_MODELS.FAST_REASONING,
-    messages: [{ role: 'user', content: prompt }],
+  const rawAi = await callGeminiLite({
+    parts: [{ text: prompt }, ...documentParts],
     temperature: 0.2,
+    maxOutputTokens: 1600,
+    jsonOutput: true,
   });
 
   const parsed = extractJsonFromAi<{
@@ -69,4 +140,3 @@ Kembalikan HANYA JSON valid (tanpa teks tambahan) dengan struktur persis berikut
     evaluatedAt: new Date().toISOString(),
   };
 }
-

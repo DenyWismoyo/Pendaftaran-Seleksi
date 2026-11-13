@@ -41,7 +41,7 @@ function SubmissionsContent() {
             toast.error('Tidak ada data pendaftar untuk diekspor.');
             return;
           }
-          downloadSubmissionsCsv(s.filteredSubmissions);
+          downloadSubmissionsCsv(s.filteredSubmissions, s.selectedFormFilterDef);
         }}
       />
 
@@ -75,12 +75,18 @@ function SubmissionsContent() {
               evaluatingAi={s.evaluatingAi}
               reviewStatus={s.reviewStatus}
               reviewerNote={s.reviewerNote}
+              revisionFields={s.revisionFields}
+              interviewSchedule={s.interviewSchedule}
               savingReview={s.savingReview}
+              savingScore={s.savingScore}
               onEvaluateAi={s.handleEvaluateAi}
               onPreviewFile={s.setPreviewFile}
               onReviewStatusChange={s.setReviewStatus}
               onReviewerNoteChange={s.setReviewerNote}
+              onToggleRevisionField={s.toggleRevisionField}
+              onInterviewScheduleChange={s.setInterviewSchedule}
               onSaveReview={s.handleSaveReview}
+              onSavePanelScore={s.handleSavePanelScore}
             />
           )}
         </div>

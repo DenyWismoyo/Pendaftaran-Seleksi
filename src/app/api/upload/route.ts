@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDownloadURL } from 'firebase-admin/storage';
 import { getAdminBucket, getAdminDb } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
-import { SelectionForm } from '@/types/selection';
+import { SelectionForm, SelectionSubmission } from '@/types/selection';
 import { generateDraftToken } from '@/lib/utils';
+import {
+  assertAllowedAppOrigin,
+  checkRateLimit,
+  getClientIp,
+} from '@/lib/security';
 
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
@@ -16,13 +21,35 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 export async function POST(req: NextRequest) {
+  const originCheck = assertAllowedAppOrigin(req);
+  if (!originCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: originCheck.reason },
+      { status: 403 }
+    );
+  }
+
+  const ip = getClientIp(req);
+  const rate = checkRateLimit(`upload-post:${ip}`, 30, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Terlalu banyak unggahan berkas. Tunggu ${rate.retryAfterSeconds} detik.`,
+      },
+      { status: 429 }
+    );
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const formId = String(formData.get('formId') || '').trim();
     const fieldId = String(formData.get('fieldId') || '').trim();
     const rawDraftToken = String(formData.get('draftToken') || '').trim().toUpperCase();
-    const draftToken = rawDraftToken || generateDraftToken();
+    const revisionCode = String(formData.get('revisionCode') || '').trim().toUpperCase();
+    const revisionEmail = String(formData.get('revisionEmail') || '').trim().toLowerCase();
+    const draftToken = rawDraftToken || revisionCode || generateDraftToken();
 
     if (!file || !formId || !fieldId) {
       return NextResponse.json(
@@ -31,7 +58,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formSnap = await getAdminDb().collection(COLLECTIONS.FORMS).doc(formId).get();
+    const db = getAdminDb();
+    const formSnap = await db.collection(COLLECTIONS.FORMS).doc(formId).get();
     if (!formSnap.exists) {
       return NextResponse.json(
         { success: false, error: 'Formulir seleksi tidak ditemukan.' },
@@ -39,7 +67,27 @@ export async function POST(req: NextRequest) {
       );
     }
     const form = formSnap.data() as SelectionForm;
-    if (form.status !== 'OPEN') {
+
+    let allowRevisionUpload = false;
+    if (revisionCode && revisionEmail) {
+      const subSnap = await db
+        .collection(COLLECTIONS.SUBMISSIONS)
+        .where('registrationCode', '==', revisionCode)
+        .limit(1)
+        .get();
+      if (!subSnap.empty) {
+        const sub = subSnap.docs[0].data() as SelectionSubmission;
+        if (
+          sub.formId === formId &&
+          sub.applicantEmail.toLowerCase() === revisionEmail &&
+          sub.status === 'NEEDS_REVISION'
+        ) {
+          allowRevisionUpload = true;
+        }
+      }
+    }
+
+    if (form.status !== 'OPEN' && !allowRevisionUpload) {
       return NextResponse.json(
         { success: false, error: 'Pendaftaran untuk formulir ini sudah ditutup.' },
         { status: 403 }
@@ -76,7 +124,8 @@ export async function POST(req: NextRequest) {
     }
 
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `selection_uploads/${formId}/tmp/${draftToken}/${fieldId}/${Date.now()}-${safeFileName}`;
+    const folderPrefix = allowRevisionUpload ? 'rev' : 'tmp';
+    const storagePath = `selection_uploads/${formId}/${folderPrefix}/${draftToken}/${fieldId}/${Date.now()}-${safeFileName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const bucket = getAdminBucket();
@@ -115,6 +164,23 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const originCheck = assertAllowedAppOrigin(req);
+  if (!originCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: originCheck.reason },
+      { status: 403 }
+    );
+  }
+
+  const ip = getClientIp(req);
+  const rate = checkRateLimit(`upload-del:${ip}`, 30, 60_000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { success: false, error: 'Terlalu banyak permintaan hapus berkas.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json();
     const storagePath = String(body.storagePath || '').trim();
@@ -128,7 +194,6 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Pastikan hanya berkas sementara milik draftToken ini yang boleh dihapus
     const expectedPrefix = `selection_uploads/${formId}/tmp/${draftToken}/`;
     if (!storagePath.startsWith(expectedPrefix)) {
       return NextResponse.json(
