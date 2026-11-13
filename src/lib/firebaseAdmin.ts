@@ -62,13 +62,17 @@ function initAdminApp(): App {
   let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
   if (projectId && clientEmail && privateKey) {
-    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.trim();
+    if (
+      (privateKey.startsWith('"') && privateKey.endsWith('"')) ||
+      (privateKey.startsWith("'") && privateKey.endsWith("'"))
+    ) {
       privateKey = privateKey.slice(1, -1);
     }
     adminApp = initializeApp({
       credential: cert({
-        projectId,
-        clientEmail,
+        projectId: projectId.trim(),
+        clientEmail: clientEmail.trim(),
         privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
       storageBucket: SELEKSI_STORAGE_BUCKET,
