@@ -26,9 +26,14 @@ import {
   getEffectiveFileAutofillTargets,
   suggestAutofillTargetsForFileField,
 } from '@/lib/autofillMapper';
+import { hasFormCoverContent } from '@/lib/formCover';
 import { adminFetch } from '@/lib/adminClient';
 import { cn, slugify } from '@/lib/utils';
+import CoverBuilderSection, {
+  CoverFormState,
+} from '@/components/admin/CoverBuilderSection';
 import FileAutofillConfigCard from '@/components/admin/FileAutofillConfigCard';
+import SelectionCoverView from '@/components/seleksi/SelectionCoverView';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Teks Singkat' },
@@ -137,6 +142,18 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
     initialData?.enableAiAutofill ?? true
   );
   const [aiCriteria, setAiCriteria] = useState(initialData?.aiCriteria || '');
+  const [coverState, setCoverState] = useState<CoverFormState>({
+    showCover: initialData ? hasFormCoverContent(initialData) : true,
+    coverTitle: initialData?.coverTitle || '',
+    coverSummary: initialData?.coverSummary || '',
+    coverHighlightsText: (initialData?.coverHighlights || []).join('\n'),
+    coverImage: initialData?.coverImage || null,
+    coverAttachments: initialData?.coverAttachments || [],
+    coverCtaLabel: initialData?.coverCtaLabel || '',
+  });
+  const [previewTab, setPreviewTab] = useState<'cover' | 'fields'>(
+    initialData && hasFormCoverContent(initialData) ? 'cover' : 'fields'
+  );
 
   const [fields, setFields] = useState<SelectionField[]>(
     initialData?.fields || [
@@ -265,6 +282,16 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       if (d.slug && !isEditing) setSlug(d.slug);
       if (d.description) setDescription(d.description);
       if (d.requirementsNote) setRequirementsNote(d.requirementsNote);
+      if (d.coverSummary || (Array.isArray(d.coverHighlights) && d.coverHighlights.length > 0)) {
+        setCoverState((prev) => ({
+          ...prev,
+          showCover: true,
+          coverSummary: d.coverSummary || prev.coverSummary,
+          coverHighlightsText: Array.isArray(d.coverHighlights)
+            ? d.coverHighlights.join('\n')
+            : prev.coverHighlightsText,
+        }));
+      }
       if (typeof d.enableAiAutofill === 'boolean') {
         setEnableAiAutofill(d.enableAiAutofill);
       }
@@ -292,12 +319,24 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       return;
     }
 
+    const coverHighlights = coverState.coverHighlightsText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
     const payload: SelectionFormInput = {
       title: title.trim(),
       slug: slugify(slug || title),
       category,
       description: description.trim(),
       requirementsNote: requirementsNote.trim(),
+      showCover: coverState.showCover,
+      coverTitle: coverState.coverTitle.trim(),
+      coverSummary: coverState.coverSummary.trim(),
+      coverHighlights,
+      coverImage: coverState.coverImage || null,
+      coverAttachments: coverState.coverAttachments,
+      coverCtaLabel: coverState.coverCtaLabel.trim(),
       status,
       quota: Number(quota) || 0,
       startDate: '',
@@ -575,6 +614,14 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
               </div>
             </div>
           </section>
+
+          <CoverBuilderSection
+            formKey={initialData?.id || slug || 'new-form'}
+            value={coverState}
+            onChange={(patch) =>
+              setCoverState((prev) => ({ ...prev, ...patch }))
+            }
+          />
 
           {/* Fields Editor */}
           <section className="ui-card p-5 sm:p-6 space-y-4">
@@ -877,75 +924,132 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
         {/* Right: Live Preview */}
         {showPreview && (
           <aside className="xl:col-span-5 xl:sticky xl:top-24 ui-card p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3 gap-2">
               <span className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-500">
-                Pratinjau Tampilan Pelamar
+                Pratinjau Pelamar
               </span>
-              <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold">
-                Live
-              </span>
+              <div className="flex items-center gap-1.5">
+                {coverState.showCover && (
+                  <div className="inline-flex items-center rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 text-[11px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('cover')}
+                      className={cn(
+                        'px-2 py-0.5 rounded-md cursor-pointer',
+                        previewTab === 'cover'
+                          ? 'bg-zinc-900 text-white'
+                          : 'text-zinc-600'
+                      )}
+                    >
+                      Cover
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('fields')}
+                      className={cn(
+                        'px-2 py-0.5 rounded-md cursor-pointer',
+                        previewTab === 'fields'
+                          ? 'bg-zinc-900 text-white'
+                          : 'text-zinc-600'
+                      )}
+                    >
+                      Formulir
+                    </button>
+                  </div>
+                )}
+                <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold">
+                  Live
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-[11px] font-semibold text-zinc-500">
-                {category}
-              </span>
-              <h3 className="text-lg font-bold text-zinc-900">
-                {title || 'Judul Program Seleksi'}
-              </h3>
-              <p className="text-xs text-zinc-500">
-                {description || 'Deskripsi singkat program akan tampil di sini.'}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
-              {fields.map((f, i) => (
-                <div
-                  key={f.id + i}
-                  className={cn(
-                    'space-y-1',
-                    f.width === 'half' ? 'col-span-1' : 'col-span-2'
-                  )}
-                >
-                  <label className="text-xs font-semibold text-zinc-800 block">
-                    {f.label || 'Tanpa Label'}{' '}
-                    {f.required && <span className="text-rose-500">*</span>}
-                  </label>
-                  {f.type === 'file' ? (
-                    <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3 text-center text-[11px] text-zinc-500 flex flex-col items-center gap-1">
-                      <FileUp className="w-4 h-4 text-zinc-400" />
-                      <span>
-                        Upload ({f.accept || '.pdf,.jpg'}) • Maks {f.maxSizeMB || 5} MB
-                      </span>
-                      {enableAiAutofill &&
-                        getEffectiveFileAutofillTargets(f, {
-                          enableAiAutofill,
-                          fields,
-                        }).length > 0 && (
-                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md mt-0.5">
-                            Dapat mengisi{' '}
-                            {
-                              getEffectiveFileAutofillTargets(f, {
-                                enableAiAutofill,
-                                fields,
-                              }).length
-                            }{' '}
-                            kolom otomatis
-                          </span>
-                        )}
-                    </div>
-                  ) : f.type === 'textarea' ? (
-                    <div className="h-14 rounded-lg border border-zinc-200 bg-zinc-50" />
-                  ) : (
-                    <div className="h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 flex items-center text-[11px] text-zinc-400">
-                      {f.type === 'select'
-                        ? '-- Pilih --'
-                        : f.placeholder || `Input ${f.type}`}
-                    </div>
-                  )}
+            {coverState.showCover && previewTab === 'cover' ? (
+              <SelectionCoverView
+                previewOnly
+                form={{
+                  title,
+                  category,
+                  description,
+                  requirementsNote,
+                  status,
+                  quota,
+                  endDate,
+                  submissionCount: initialData?.submissionCount || 0,
+                  coverTitle: coverState.coverTitle,
+                  coverSummary: coverState.coverSummary,
+                  coverHighlights: coverState.coverHighlightsText
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                  coverImage: coverState.coverImage,
+                  coverAttachments: coverState.coverAttachments,
+                  coverCtaLabel: coverState.coverCtaLabel,
+                }}
+              />
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-zinc-500">
+                    {category}
+                  </span>
+                  <h3 className="text-lg font-bold text-zinc-900">
+                    {title || 'Judul Program Seleksi'}
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    {description || 'Deskripsi singkat program akan tampil di sini.'}
+                  </p>
                 </div>
-              ))}
-            </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
+                  {fields.map((f, i) => (
+                    <div
+                      key={f.id + i}
+                      className={cn(
+                        'space-y-1',
+                        f.width === 'half' ? 'col-span-1' : 'col-span-2'
+                      )}
+                    >
+                      <label className="text-xs font-semibold text-zinc-800 block">
+                        {f.label || 'Tanpa Label'}{' '}
+                        {f.required && <span className="text-rose-500">*</span>}
+                      </label>
+                      {f.type === 'file' ? (
+                        <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3 text-center text-[11px] text-zinc-500 flex flex-col items-center gap-1">
+                          <FileUp className="w-4 h-4 text-zinc-400" />
+                          <span>
+                            Upload ({f.accept || '.pdf,.jpg'}) • Maks {f.maxSizeMB || 5} MB
+                          </span>
+                          {enableAiAutofill &&
+                            getEffectiveFileAutofillTargets(f, {
+                              enableAiAutofill,
+                              fields,
+                            }).length > 0 && (
+                              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md mt-0.5">
+                                Dapat mengisi{' '}
+                                {
+                                  getEffectiveFileAutofillTargets(f, {
+                                    enableAiAutofill,
+                                    fields,
+                                  }).length
+                                }{' '}
+                                kolom otomatis
+                              </span>
+                            )}
+                        </div>
+                      ) : f.type === 'textarea' ? (
+                        <div className="h-14 rounded-lg border border-zinc-200 bg-zinc-50" />
+                      ) : (
+                        <div className="h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 flex items-center text-[11px] text-zinc-400">
+                          {f.type === 'select'
+                            ? '-- Pilih --'
+                            : f.placeholder || `Input ${f.type}`}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </aside>
         )}
       </div>

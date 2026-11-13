@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
 import { SelectionForm, SelectionFormInputSchema } from '@/types/selection';
@@ -65,6 +66,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       ...parsed.data,
       updatedAt: new Date().toISOString(),
     };
+    if (parsed.data.coverImage === null) {
+      updates.coverImage = FieldValue.delete();
+    }
     if (parsed.data.slug) {
       updates.slug = slugify(parsed.data.slug);
     }

@@ -44,6 +44,21 @@ export const SelectionFieldSchema = z.object({
 });
 export type SelectionField = z.infer<typeof SelectionFieldSchema>;
 
+export const CoverMediaSchema = z.object({
+  fileName: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  url: z.string().url(),
+  storagePath: z.string(),
+});
+export type CoverMedia = z.infer<typeof CoverMediaSchema>;
+
+export const CoverAttachmentSchema = CoverMediaSchema.extend({
+  id: z.string().min(1),
+  title: z.string().min(1),
+});
+export type CoverAttachment = z.infer<typeof CoverAttachmentSchema>;
+
 export const SelectionFormSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(3, 'Judul formulir minimal 3 karakter'),
@@ -51,6 +66,13 @@ export const SelectionFormSchema = z.object({
   category: z.string().min(2).default('Umum'),
   description: z.string().default(''),
   requirementsNote: z.string().optional().default(''),
+  showCover: z.boolean().optional(),
+  coverTitle: z.string().optional(),
+  coverSummary: z.string().optional(),
+  coverHighlights: z.array(z.string()).optional(),
+  coverImage: CoverMediaSchema.nullable().optional(),
+  coverAttachments: z.array(CoverAttachmentSchema).optional(),
+  coverCtaLabel: z.string().optional(),
   status: SelectionFormStatusEnum.default('OPEN'),
   quota: z.number().int().min(0).default(0),
   startDate: z.string().optional().default(''),

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, FileText } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileText } from 'lucide-react';
 import { FORM_STATUS_META } from '@/lib/constants';
 import { cn, formatDateID } from '@/lib/utils';
 import { SelectionForm } from '@/types/selection';
@@ -9,20 +9,36 @@ import { SelectionForm } from '@/types/selection';
 interface SelectionHeaderCardProps {
   form: SelectionForm;
   isClosed: boolean;
+  hasCover?: boolean;
+  onShowCover?: () => void;
 }
 
 export default function SelectionHeaderCard({
   form,
   isClosed,
+  hasCover = false,
+  onShowCover,
 }: SelectionHeaderCardProps) {
   const statusMeta = FORM_STATUS_META[form.status] || FORM_STATUS_META.OPEN;
 
   return (
     <section className="ui-card p-5 sm:p-8 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-md">
-          {form.category}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-md">
+            {form.category}
+          </span>
+          {hasCover && onShowCover && (
+            <button
+              type="button"
+              onClick={onShowCover}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md cursor-pointer"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              <span>Cover &amp; Pengumuman</span>
+            </button>
+          )}
+        </div>
         <span
           className={cn(
             'text-xs font-semibold px-3 py-1 rounded-md border',

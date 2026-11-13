@@ -56,6 +56,8 @@ Kembalikan HANYA JSON valid dengan struktur:
 {
   "title": "Judul resmi formulir seleksi",
   "description": "Deskripsi singkat program seleksi (2 kalimat)",
+  "coverSummary": "Pengantar ringkas seleksi untuk halaman cover sebelum peserta mengisi formulir (2-3 kalimat jelas)",
+  "coverHighlights": ["Poin informasi penting 1 (jadwal/syarat)", "Poin informasi penting 2", "Poin informasi penting 3"],
   "requirementsNote": "Catatan berkas yang perlu disiapkan pelamar",
   "aiCriteria": "Kriteria penilaian awal untuk panitia/AI",
   "fields": [
@@ -91,6 +93,8 @@ Catatan:
       const parsed = extractJsonFromAi<{
         title: string;
         description: string;
+        coverSummary?: string;
+        coverHighlights?: string[];
         requirementsNote: string;
         aiCriteria: string;
         fields: SelectionField[];
@@ -125,6 +129,10 @@ Catatan:
           slug: slugify(parsed.title || topic),
           category,
           description: parsed.description || '',
+          coverSummary: parsed.coverSummary || parsed.description || '',
+          coverHighlights: Array.isArray(parsed.coverHighlights)
+            ? parsed.coverHighlights.filter((x) => typeof x === 'string' && x.trim())
+            : [],
           requirementsNote: parsed.requirementsNote || '',
           enableAiAutofill: true,
           aiCriteria: parsed.aiCriteria || '',

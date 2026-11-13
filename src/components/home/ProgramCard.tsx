@@ -23,39 +23,52 @@ export default function ProgramCard({ form }: { form: SelectionForm }) {
   const canApply = form.status === 'OPEN' && !isFull && !deadline?.expired;
 
   return (
-    <article className="ui-card p-5 sm:p-6 flex flex-col justify-between sm:hover:border-zinc-400 transition-all">
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-semibold text-zinc-700 bg-zinc-100 px-2.5 py-1 rounded-md">
-            {form.category}
-          </span>
-          <span
-            className={cn(
-              'text-[11px] font-semibold px-2.5 py-1 rounded-md border',
-              isFull || deadline?.expired
-                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                : statusMeta.badgeClass
-            )}
-          >
-            {isFull
-              ? 'Kuota Penuh'
-              : deadline?.expired
-                ? 'Ditutup'
-                : statusMeta.label}
-          </span>
+    <article className="ui-card overflow-hidden flex flex-col justify-between sm:hover:border-zinc-400 transition-all">
+      <div>
+        {form.coverImage?.url && (
+          <div className="border-b border-zinc-200 bg-zinc-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={form.coverImage.url}
+              alt={form.coverTitle || form.title}
+              className="w-full h-40 object-cover"
+            />
+          </div>
+        )}
+        <div className="p-5 sm:p-6 pb-0 space-y-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-zinc-700 bg-zinc-100 px-2.5 py-1 rounded-md">
+              {form.category}
+            </span>
+            <span
+              className={cn(
+                'text-[11px] font-semibold px-2.5 py-1 rounded-md border',
+                isFull || deadline?.expired
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : statusMeta.badgeClass
+              )}
+            >
+              {isFull
+                ? 'Kuota Penuh'
+                : deadline?.expired
+                  ? 'Ditutup'
+                  : statusMeta.label}
+            </span>
+          </div>
+
+          <h3 className="text-lg font-bold text-zinc-900 leading-snug">
+            {form.title}
+          </h3>
+
+          <p className="text-sm text-zinc-600 line-clamp-3 leading-relaxed">
+            {form.coverSummary ||
+              form.description ||
+              'Lengkapi biodata dan unggah berkas persyaratan seleksi.'}
+          </p>
         </div>
-
-        <h3 className="text-lg font-bold text-zinc-900 leading-snug">
-          {form.title}
-        </h3>
-
-        <p className="text-sm text-zinc-600 line-clamp-3 leading-relaxed">
-          {form.description ||
-            'Lengkapi biodata dan unggah berkas persyaratan seleksi.'}
-        </p>
       </div>
 
-      <div className="pt-5 mt-5 border-t border-zinc-100 space-y-4">
+      <div className="p-5 sm:p-6 pt-5 mt-5 border-t border-zinc-100 space-y-4">
         {form.quota > 0 ? (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">

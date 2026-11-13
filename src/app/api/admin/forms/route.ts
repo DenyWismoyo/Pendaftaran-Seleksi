@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
 
     const formDoc: SelectionForm = {
       ...input,
+      ...(input.coverImage ? { coverImage: input.coverImage } : {}),
       id,
       slug: finalSlug,
       submissionCount: 0,
@@ -69,6 +70,9 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       updatedAt: now,
     };
+    if (formDoc.coverImage === null) {
+      delete formDoc.coverImage;
+    }
 
     await db.collection(COLLECTIONS.FORMS).doc(id).set(formDoc);
     return NextResponse.json({ success: true, data: formDoc }, { status: 201 });

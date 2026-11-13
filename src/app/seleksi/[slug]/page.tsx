@@ -8,6 +8,7 @@ import FilePreviewModal from '@/components/FilePreviewModal';
 import CompletenessChecklistPanel from '@/components/seleksi/CompletenessChecklistPanel';
 import { RestoreDraftModal, SaveDraftModal } from '@/components/seleksi/DraftModals';
 import DraftSyncToolbar from '@/components/seleksi/DraftSyncToolbar';
+import SelectionCoverView from '@/components/seleksi/SelectionCoverView';
 import SelectionHeaderCard from '@/components/seleksi/SelectionHeaderCard';
 import SubmissionSuccessView from '@/components/seleksi/SubmissionSuccessView';
 import WizardStepCard from '@/components/seleksi/WizardStepCard';
@@ -71,127 +72,119 @@ function SelectionFormContent() {
 
   return (
     <div className="ui-shell-narrow space-y-4 sm:space-y-6">
-      <DraftSyncToolbar
-        isClosed={isClosed}
-        syncState={w.syncState}
-        draftToken={w.draftToken}
-        lastSyncedAt={w.lastSyncedAt}
-        hasAnyProgress={hasAnyProgress}
-        onOpenRestore={() => {
-          w.setRestoreError('');
-          w.setRestoreModalOpen(true);
-        }}
-        onSaveLater={w.handleSaveAndContinueLater}
-        onReset={w.handleResetDraft}
-      />
-
-      <SelectionHeaderCard form={w.form} isClosed={isClosed} />
-
-      {isClosed ? (
-        <div className="ui-callout-rose rounded-none border-x-0 sm:rounded-2xl sm:border-x p-6 text-center text-sm font-semibold">
-          Penerimaan pendaftaran untuk program seleksi ini saat ini sedang
-          ditutup atau kuota telah terpenuhi.
-        </div>
+      {w.showCoverScreen ? (
+        <SelectionCoverView
+          form={w.form}
+          isClosed={isClosed}
+          hasDraftProgress={hasAnyProgress}
+          onStartForm={w.startFromCover}
+          onOpenRestore={() => {
+            w.setRestoreError('');
+            w.setRestoreModalOpen(true);
+          }}
+          onPreviewAttachment={w.setPreviewFile}
+        />
       ) : (
-        <div className="space-y-4 sm:space-y-5">
-          <CompletenessChecklistPanel
-            completedCount={w.checklist.completedCount}
-            totalCount={w.checklist.totalCount}
-            percent={w.checklist.percent}
-            missingItems={w.missingItems}
-            stepSummaries={w.stepSummaries}
-            nextIncompleteStepIndex={w.nextIncompleteStepIndex}
-            showMissingDetails={w.showMissingDetails}
-            onToggleDetails={() => w.setShowMissingDetails((prev) => !prev)}
-            onJumpToStep={w.jumpToStep}
+        <>
+          <DraftSyncToolbar
+            isClosed={isClosed}
+            syncState={w.syncState}
+            draftToken={w.draftToken}
+            lastSyncedAt={w.lastSyncedAt}
+            hasAnyProgress={hasAnyProgress}
+            onOpenRestore={() => {
+              w.setRestoreError('');
+              w.setRestoreModalOpen(true);
+            }}
+            onSaveLater={w.handleSaveAndContinueLater}
+            onReset={w.handleResetDraft}
           />
-
-          <WizardStepperNav
-            steps={w.wizardSteps}
-            stepSummaries={w.stepSummaries}
-            currentStep={w.currentStep}
-            onStepSelect={w.jumpToStep}
-            onSkipStep={w.skipToNextStep}
+          <SelectionHeaderCard
+            form={w.form}
+            isClosed={isClosed}
+            hasCover={w.hasCover}
+            onShowCover={w.openCoverScreen}
           />
-
-          <WizardStepCard
-            currentStep={w.currentStep}
-            wizardSteps={w.wizardSteps}
-            stepSummary={w.stepSummaries[w.currentStep]}
-            nextIncompleteStepIndex={w.nextIncompleteStepIndex}
-            fields={w.form.fields}
-            applicantName={w.applicantName}
-            applicantEmail={w.applicantEmail}
-            applicantPhone={w.applicantPhone}
-            answers={w.answers}
-            files={w.files}
-            uploadingFields={w.uploadingFields}
-            dragActiveField={w.dragActiveField}
-            fieldErrors={w.fieldErrors}
-            checkedFileIds={w.checkedFileIds}
-            missingItems={w.missingItems}
-            duplicateInfo={w.duplicateInfo}
-            selfCheckReadability={w.selfCheckReadability}
-            selfCheckTruthfulness={w.selfCheckTruthfulness}
-            submitting={w.submitting}
-            anyUploading={anyUploading}
-            onNameChange={w.setApplicantName}
-            onEmailChange={w.setApplicantEmail}
-            onPhoneChange={w.setApplicantPhone}
-            onClearDuplicate={() => w.setDuplicateInfo(null)}
-            onAnswerChange={w.handleAnswerChange}
-            onCheckboxToggle={w.handleCheckboxToggle}
-            onFileUpload={w.handleFileUpload}
-            onRemoveFile={w.removeUploadedFile}
-            onOpenPreview={w.handleOpenPreview}
-            onDragActiveChange={w.setDragActiveField}
-            onJumpToStep={w.jumpToStep}
-            onReadabilityChange={w.setSelfCheckReadability}
-            onTruthfulnessChange={w.setSelfCheckTruthfulness}
-            onPrevStep={w.goToPrevStep}
-            onNextStep={w.goToNextStep}
-            onSkipStep={w.skipToNextStep}
-            onSubmit={w.handleSubmit}
-            autofill={w.autofill}
-          />
-        </div>
+          {isClosed ? (
+            <div className="ui-callout-rose rounded-none border-x-0 sm:rounded-2xl sm:border-x p-6 text-center text-sm font-semibold">
+              Penerimaan pendaftaran untuk program seleksi ini saat ini sedang
+              ditutup atau kuota telah terpenuhi.
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-5">
+              <CompletenessChecklistPanel
+                completedCount={w.checklist.completedCount}
+                totalCount={w.checklist.totalCount}
+                percent={w.checklist.percent}
+                missingItems={w.missingItems}
+                stepSummaries={w.stepSummaries}
+                nextIncompleteStepIndex={w.nextIncompleteStepIndex}
+                showMissingDetails={w.showMissingDetails}
+                onToggleDetails={() => w.setShowMissingDetails((prev) => !prev)}
+                onJumpToStep={w.jumpToStep}
+              />
+              <WizardStepperNav
+                steps={w.wizardSteps}
+                stepSummaries={w.stepSummaries}
+                currentStep={w.currentStep}
+                onStepSelect={w.jumpToStep}
+                onSkipStep={w.skipToNextStep}
+              />
+              <WizardStepCard
+                currentStep={w.currentStep}
+                wizardSteps={w.wizardSteps}
+                stepSummary={w.stepSummaries[w.currentStep]}
+                nextIncompleteStepIndex={w.nextIncompleteStepIndex}
+                fields={w.form.fields}
+                applicantName={w.applicantName}
+                applicantEmail={w.applicantEmail}
+                applicantPhone={w.applicantPhone}
+                answers={w.answers}
+                files={w.files}
+                uploadingFields={w.uploadingFields}
+                dragActiveField={w.dragActiveField}
+                fieldErrors={w.fieldErrors}
+                checkedFileIds={w.checkedFileIds}
+                missingItems={w.missingItems}
+                duplicateInfo={w.duplicateInfo}
+                selfCheckReadability={w.selfCheckReadability}
+                selfCheckTruthfulness={w.selfCheckTruthfulness}
+                submitting={w.submitting}
+                anyUploading={anyUploading}
+                onNameChange={w.setApplicantName}
+                onEmailChange={w.setApplicantEmail}
+                onPhoneChange={w.setApplicantPhone}
+                onClearDuplicate={() => w.setDuplicateInfo(null)}
+                onAnswerChange={w.handleAnswerChange}
+                onCheckboxToggle={w.handleCheckboxToggle}
+                onFileUpload={w.handleFileUpload}
+                onRemoveFile={w.removeUploadedFile}
+                onOpenPreview={w.handleOpenPreview}
+                onDragActiveChange={w.setDragActiveField}
+                onJumpToStep={w.jumpToStep}
+                onReadabilityChange={w.setSelfCheckReadability}
+                onTruthfulnessChange={w.setSelfCheckTruthfulness}
+                onPrevStep={w.goToPrevStep}
+                onNextStep={w.goToNextStep}
+                onSkipStep={w.skipToNextStep}
+                onSubmit={w.handleSubmit}
+                autofill={w.autofill}
+              />
+            </div>
+          )}
+        </>
       )}
 
-      <SaveDraftModal
-        open={w.saveModalOpen}
-        draftToken={w.draftToken}
-        resumeUrl={resumeUrl}
-        onClose={() => w.setSaveModalOpen(false)}
-      />
-
-      <RestoreDraftModal
-        open={w.restoreModalOpen}
-        restoreInputCode={w.restoreInputCode}
-        restoreError={w.restoreError}
-        restoringFromServer={w.restoringFromServer}
-        onInputChange={w.setRestoreInputCode}
-        onSubmit={w.handleRestoreByCode}
-        onClose={() => w.setRestoreModalOpen(false)}
-      />
-
-      <FilePreviewModal
-        file={w.previewFile}
-        onClose={() => w.setPreviewFile(null)}
-      />
+      <SaveDraftModal open={w.saveModalOpen} draftToken={w.draftToken} resumeUrl={resumeUrl} onClose={() => w.setSaveModalOpen(false)} />
+      <RestoreDraftModal open={w.restoreModalOpen} restoreInputCode={w.restoreInputCode} restoreError={w.restoreError} restoringFromServer={w.restoringFromServer} onInputChange={w.setRestoreInputCode} onSubmit={w.handleRestoreByCode} onClose={() => w.setRestoreModalOpen(false)} />
+      <FilePreviewModal file={w.previewFile} onClose={() => w.setPreviewFile(null)} />
     </div>
   );
 }
 
 export default function SelectionFormPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="max-w-3xl mx-auto px-4 py-24 flex flex-col items-center gap-3 text-zinc-500">
-          <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
-          <p className="text-sm">Memuat formulir seleksi...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="max-w-3xl mx-auto px-4 py-24 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-zinc-900" /></div>}>
       <SelectionFormContent />
     </Suspense>
   );

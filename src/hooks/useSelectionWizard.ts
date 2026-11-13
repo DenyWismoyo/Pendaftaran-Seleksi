@@ -21,6 +21,7 @@ import {
   getEffectiveFileAutofillTargets,
   getRecommendedSourceFilesForForm,
 } from '@/lib/autofillMapper';
+import { hasFormCoverContent } from '@/lib/formCover';
 import {
   AutofillTargetInfo,
   SelectionDraft,
@@ -68,6 +69,9 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
   const [restoreError, setRestoreError] = useState('');
   const [restoringFromServer, setRestoringFromServer] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<DuplicateInfo | null>(null);
+  const [coverDismissed, setCoverDismissed] = useState<boolean>(
+    Boolean(queryDraftToken)
+  );
   const [autofillBusyField, setAutofillBusyField] = useState<string | null>(null);
   const [autofillResult, setAutofillResult] = useState<AutofillResultState | null>(
     null
@@ -209,6 +213,14 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
         if (typeof localDraft.currentStep === 'number') {
           setCurrentStep(localDraft.currentStep);
         }
+        if (
+          localDraft.applicantName ||
+          localDraft.applicantEmail ||
+          Object.keys(localDraft.answers || {}).length > 0 ||
+          (localDraft.files || []).length > 0
+        ) {
+          setCoverDismissed(true);
+        }
         setDraftRestored(true);
         setSyncState('local');
       }
@@ -235,6 +247,14 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
               setFiles(Array.isArray(serverDraft.files) ? serverDraft.files : []);
               if (typeof serverDraft.currentStep === 'number') {
                 setCurrentStep(serverDraft.currentStep);
+              }
+              if (
+                queryDraftToken ||
+                serverDraft.applicantName ||
+                Object.keys(serverDraft.answers || {}).length > 0 ||
+                (serverDraft.files || []).length > 0
+              ) {
+                setCoverDismissed(true);
               }
               setDraftRestored(true);
               setSyncState('saved');
@@ -861,6 +881,7 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
 
       setRestoreModalOpen(false);
       setRestoreInputCode('');
+      setCoverDismissed(true);
       toast.success(`Draf ${loaded.draftToken} berhasil dipulihkan.`);
     } catch {
       setRestoreError('Gagal menghubungi server untuk memuat draf.');
@@ -896,6 +917,7 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     setSyncState('idle');
     setLastSyncedAt(null);
     setCurrentStep(0);
+    setCoverDismissed(false);
     toast.success('Draf formulir dibersihkan.');
   };
 
@@ -963,10 +985,25 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     }
   };
 
+  const hasCover = Boolean(form && hasFormCoverContent(form));
+  const showCoverScreen = Boolean(hasCover && !coverDismissed && !receipt);
+  const startFromCover = () => {
+    setCoverDismissed(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const openCoverScreen = () => {
+    setCoverDismissed(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return {
     form,
     loading,
     errorMsg,
+    hasCover,
+    showCoverScreen,
+    startFromCover,
+    openCoverScreen,
     draftToken,
     syncState,
     lastSyncedAt,
