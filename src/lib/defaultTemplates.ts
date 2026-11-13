@@ -225,3 +225,4 @@ export const STARTER_FORM_TEMPLATES: SelectionFormInput[] = [
     ],
   },
 ];
+

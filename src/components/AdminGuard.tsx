@@ -49,7 +49,7 @@ export default function AdminGuard({
       } else {
         setAdmin(null);
         setDeniedMsg(
-          res.error || 'Akun ini tidak memiliki izin akses administrator.'
+          res.error || 'Akun ini tidak memiliki izin akses panitia seleksi.'
         );
       }
       setChecking(false);
@@ -59,9 +59,9 @@ export default function AdminGuard({
 
   if (checking) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-sm">Memverifikasi sesi administrator...</p>
+      <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-500">
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
+        <p className="text-sm">Memverifikasi sesi panitia...</p>
       </div>
     );
   }
@@ -70,14 +70,14 @@ export default function AdminGuard({
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
         <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
-        <h1 className="text-xl font-bold text-slate-900">Akses Dibatasi</h1>
-        <p className="text-sm text-slate-600">{deniedMsg}</p>
+        <h1 className="text-xl font-bold text-zinc-900">Akses Dibatasi</h1>
+        <p className="text-sm text-zinc-600">{deniedMsg}</p>
         <button
           onClick={async () => {
             await signOut(auth);
             router.replace('/admin/login');
           }}
-          className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold cursor-pointer"
+          className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-semibold cursor-pointer"
         >
           Keluar &amp; Ganti Akun
         </button>
@@ -90,12 +90,12 @@ export default function AdminGuard({
   const tabs = [
     { href: '/admin', label: 'Daftar Formulir', icon: LayoutDashboard },
     { href: '/admin/forms/new', label: 'Buat Formulir', icon: PlusCircle },
-    { href: '/admin/submissions', label: 'Data Pendaftar', icon: Users },
+    { href: '/admin/submissions', label: 'Verifikasi Pelamar', icon: Users },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-3.5 shadow-sm">
         <div className="flex flex-wrap items-center gap-1.5">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -110,10 +110,10 @@ export default function AdminGuard({
                 key={t.href}
                 href={t.href}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors',
+                  'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors',
                   active
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
                 )}
               >
                 <Icon className="w-4 h-4" />
@@ -125,8 +125,8 @@ export default function AdminGuard({
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-semibold text-slate-800">{admin.email}</p>
-            <p className="text-[11px] uppercase tracking-wider text-indigo-600 font-semibold">
+            <p className="text-xs font-semibold text-zinc-800">{admin.email}</p>
+            <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-semibold">
               {admin.role}
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function AdminGuard({
               await signOut(auth);
               router.replace('/admin/login');
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Keluar</span>

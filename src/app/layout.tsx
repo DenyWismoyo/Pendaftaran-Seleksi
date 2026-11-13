@@ -1,12 +1,25 @@
 import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import Navbar from '@/components/Navbar';
 import './globals.css';
 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Portal Pendaftaran & Seleksi Online',
+  title: 'Sistem Seleksi & Registrasi Terpadu',
   description:
-    'Sistem formulir pendaftaran seleksi dinamis, unggah berkas persyaratan, dan verifikasi panitia.',
+    'Portal resmi pendaftaran program seleksi, unggah dokumen persyaratan, dan verifikasi status peserta.',
 };
 
 export default function RootLayout({
@@ -15,14 +28,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className="min-h-screen flex flex-col antialiased bg-slate-50 text-slate-900">
-        <Navbar />
+    <html lang="id" className={`${plusJakarta.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen flex flex-col antialiased bg-[#f6f5f2] text-zinc-900">
+        <div className="no-print">
+          <Navbar />
+        </div>
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-slate-200 bg-white py-6 mt-12">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} Portal Pendaftaran &amp; Seleksi Online</p>
-            <p>Terintegrasi Firebase Storage, Firestore &amp; Clario AI</p>
+        <footer className="no-print border-t border-zinc-200/80 bg-white py-6 mt-16">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-600" />
+              <span className="font-medium text-zinc-700">
+                Sistem Seleksi &amp; Registrasi Terpadu
+              </span>
+            </div>
+            <p>© {new Date().getFullYear()} • Layanan Penerimaan &amp; Verifikasi Berkas</p>
           </div>
         </footer>
         <Toaster position="top-right" richColors />

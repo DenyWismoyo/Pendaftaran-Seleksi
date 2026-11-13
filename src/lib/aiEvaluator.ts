@@ -69,3 +69,4 @@ Kembalikan HANYA JSON valid (tanpa teks tambahan) dengan struktur persis berikut
     evaluatedAt: new Date().toISOString(),
   };
 }
+

@@ -96,3 +96,4 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+

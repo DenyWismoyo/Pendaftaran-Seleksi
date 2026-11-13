@@ -26,3 +26,4 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
 export { app };
+

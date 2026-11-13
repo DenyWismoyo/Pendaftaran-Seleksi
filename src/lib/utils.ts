@@ -32,6 +32,31 @@ export function formatDateID(isoOrDate?: string): string {
   }).format(d);
 }
 
+export function getDeadlineBadge(endDate?: string): {
+  label: string;
+  urgent: boolean;
+  expired: boolean;
+} | null {
+  if (!endDate) return null;
+  const target = new Date(endDate);
+  if (Number.isNaN(target.getTime())) return null;
+
+  target.setHours(23, 59, 59, 999);
+  const diffMs = target.getTime() - Date.now();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: 'Pendaftaran Berakhir', urgent: false, expired: true };
+  }
+  if (diffDays === 0) {
+    return { label: 'Hari Terakhir', urgent: true, expired: false };
+  }
+  if (diffDays <= 5) {
+    return { label: `Tutup ${diffDays} hari lagi`, urgent: true, expired: false };
+  }
+  return { label: `Hingga ${formatDateID(endDate)}`, urgent: false, expired: false };
+}
+
 export function generateRegistrationCode(): string {
   const year = new Date().getFullYear();
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

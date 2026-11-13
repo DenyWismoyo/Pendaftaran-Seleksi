@@ -5,7 +5,8 @@ import { SelectionSubmission, SubmissionStatusEnum } from '@/types/selection';
 import { z } from 'zod';
 
 const UpdateSubmissionSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1).optional(),
+  ids: z.array(z.string().min(1)).optional(),
   status: SubmissionStatusEnum,
   reviewerNote: z.string().optional().default(''),
 });
@@ -58,29 +59,58 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { id, status, reviewerNote } = parsed.data;
-    const now = new Date().toISOString();
-    const docRef = getAdminDb().collection(COLLECTIONS.SUBMISSIONS).doc(id);
-    const snap = await docRef.get();
-    if (!snap.exists) {
+    const { id, ids, status, reviewerNote } = parsed.data;
+    const targetIds = ids && ids.length > 0 ? ids : id ? [id] : [];
+
+    if (targetIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Data pendaftar tidak ditemukan.' },
-        { status: 404 }
+        { success: false, error: 'Pilih minimal satu pendaftar untuk diperbarui.' },
+        { status: 400 }
       );
     }
 
-    await docRef.update({
+    const db = getAdminDb();
+    const now = new Date().toISOString();
+    const updatePayload: Record<string, unknown> = {
       status,
-      reviewerNote,
       reviewedBy: admin.email || admin.uid,
       reviewedAt: now,
       updatedAt: now,
-    });
+    };
 
-    const updated = await docRef.get();
+    if (!ids || reviewerNote.trim() !== '') {
+      updatePayload.reviewerNote = reviewerNote;
+    }
+
+    if (targetIds.length === 1) {
+      const docRef = db.collection(COLLECTIONS.SUBMISSIONS).doc(targetIds[0]);
+      const snap = await docRef.get();
+      if (!snap.exists) {
+        return NextResponse.json(
+          { success: false, error: 'Data pendaftar tidak ditemukan.' },
+          { status: 404 }
+        );
+      }
+      await docRef.update(updatePayload);
+      const updated = await docRef.get();
+      return NextResponse.json({
+        success: true,
+        data: { id: updated.id, ...updated.data() },
+      });
+    }
+
+    const batch = db.batch();
+    for (const targetId of targetIds) {
+      batch.update(
+        db.collection(COLLECTIONS.SUBMISSIONS).doc(targetId),
+        updatePayload
+      );
+    }
+    await batch.commit();
+
     return NextResponse.json({
       success: true,
-      data: { id: updated.id, ...updated.data() },
+      data: { updatedCount: targetIds.length, status },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Gagal memperbarui status seleksi.';

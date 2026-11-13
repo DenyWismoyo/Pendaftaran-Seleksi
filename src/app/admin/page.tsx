@@ -7,8 +7,8 @@ import {
   Edit3,
   ExternalLink,
   FilePlus2,
+  FolderKanban,
   Loader2,
-  Sparkles,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -49,7 +49,7 @@ function AdminDashboardContent() {
           body: JSON.stringify(tpl),
         });
       }
-      toast.success('2 template formulir seleksi bawaan berhasil ditambahkan!');
+      toast.success('2 template formulir seleksi bawaan berhasil ditambahkan.');
       await loadForms();
     } catch {
       toast.error('Gagal mengimpor template bawaan.');
@@ -76,7 +76,7 @@ function AdminDashboardContent() {
   const handleDelete = async (form: SelectionForm) => {
     if (
       !window.confirm(
-        `Hapus formulir "${form.title}"? Data pendaftar yang sudah masuk tidak ikut terhapus otomatis.`
+        `Hapus formulir "${form.title}"? Data pendaftar yang sudah masuk tetap tersimpan.`
       )
     ) {
       return;
@@ -102,37 +102,40 @@ function AdminDashboardContent() {
     <div className="space-y-6">
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase">
-            Total Formulir Seleksi
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            Total Formulir
           </p>
-          <p className="text-3xl font-bold text-slate-900 mt-1">{forms.length}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase">
-            Formulir Aktif (Dibuka)
+          <p className="text-3xl font-bold text-zinc-900 mt-1 font-mono">
+            {forms.length}
           </p>
-          <p className="text-3xl font-bold text-emerald-600 mt-1">{openForms}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            Sedang Dibuka
+          </p>
+          <p className="text-3xl font-bold text-emerald-700 mt-1 font-mono">
+            {openForms}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
             Total Pendaftar Masuk
           </p>
-          <p className="text-3xl font-bold text-indigo-600 mt-1">
+          <p className="text-3xl font-bold text-zinc-900 mt-1 font-mono">
             {totalSubmissions}
           </p>
         </div>
       </div>
 
-      {/* Actions Header */}
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
             Manajemen Formulir Seleksi
           </h1>
-          <p className="text-xs text-slate-500">
-            Buat formulir baru, bagikan link pendaftaran publik, dan kelola status
-            penerimaan.
+          <p className="text-xs text-zinc-500">
+            Kelola jadwal pembukaan, susunan berkas unggahan, dan tautan publik.
           </p>
         </div>
 
@@ -140,19 +143,19 @@ function AdminDashboardContent() {
           <button
             onClick={handleImportStarterTemplates}
             disabled={seeding}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs sm:text-sm font-semibold hover:bg-indigo-100 disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-700 text-xs sm:text-sm font-semibold hover:bg-zinc-50 disabled:opacity-60 cursor-pointer"
           >
             {seeding ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              <FolderKanban className="w-4 h-4" />
             )}
-            <span>Import Template Bawaan</span>
+            <span>Import Template Siap Pakai</span>
           </button>
 
           <Link
             href="/admin/forms/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs sm:text-sm font-semibold hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-colors"
           >
             <FilePlus2 className="w-4 h-4" />
             <span>Buat Formulir Baru</span>
@@ -163,16 +166,16 @@ function AdminDashboardContent() {
       {/* Forms List */}
       {loading ? (
         <div className="py-16 flex justify-center">
-          <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
+          <Loader2 className="w-7 h-7 animate-spin text-zinc-900" />
         </div>
       ) : forms.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center space-y-3">
-          <p className="text-base font-semibold text-slate-800">
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center space-y-3">
+          <p className="text-base font-bold text-zinc-800">
             Belum ada formulir seleksi
           </p>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Klik &ldquo;Import Template Bawaan&rdquo; untuk langsung mencoba template
-            Seleksi Pelatihan Vokasi &amp; Magang, atau buat formulir kustom sendiri.
+          <p className="text-xs text-zinc-500 max-w-md mx-auto">
+            Klik &ldquo;Import Template Siap Pakai&rdquo; untuk membuat contoh form
+            Pelatihan Vokasi &amp; Magang, atau rancang formulir kustom dari awal.
           </p>
         </div>
       ) : (
@@ -184,11 +187,11 @@ function AdminDashboardContent() {
             return (
               <div
                 key={form.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
               >
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md">
+                    <span className="text-[11px] font-semibold text-zinc-700 bg-zinc-100 px-2.5 py-0.5 rounded-md">
                       {form.category}
                     </span>
                     <span
@@ -199,23 +202,24 @@ function AdminDashboardContent() {
                     >
                       {meta.label}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-zinc-400">
                       Dibuat {formatDateID(form.createdAt)}
                     </span>
                   </div>
 
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                  <h2 className="text-base sm:text-lg font-bold text-zinc-900 truncate">
                     {form.title}
                   </h2>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                    <span className="font-mono text-slate-600">{publicPath}</span>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
+                    <span className="font-mono text-zinc-600">{publicPath}</span>
                     <span>
                       <strong>{form.fields.length}</strong> field (
                       {form.fields.filter((f) => f.type === 'file').length} berkas)
                     </span>
                     <span>
                       <strong>{form.submissionCount || 0}</strong> pendaftar
+                      {form.quota > 0 ? ` / ${form.quota}` : ''}
                     </span>
                   </div>
                 </div>
@@ -229,7 +233,7 @@ function AdminDashboardContent() {
                         e.target.value as SelectionFormStatus
                       )
                     }
-                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                    className="px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold bg-white"
                   >
                     <option value="OPEN">Dibuka</option>
                     <option value="DRAFT">Draf</option>
@@ -241,10 +245,9 @@ function AdminDashboardContent() {
                     onClick={() => {
                       const fullUrl = `${window.location.origin}${publicPath}`;
                       navigator.clipboard.writeText(fullUrl);
-                      toast.success('Link formulir disalin!');
+                      toast.success('Tautan publik disalin.');
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                    title="Salin Link Publik"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span>Salin Link</span>
@@ -253,7 +256,7 @@ function AdminDashboardContent() {
                   <Link
                     href={publicPath}
                     target="_blank"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Buka</span>
@@ -261,7 +264,7 @@ function AdminDashboardContent() {
 
                   <Link
                     href={`/admin/submissions?formId=${form.id}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
                   >
                     <Users className="w-3.5 h-3.5" />
                     <span>Pendaftar</span>
@@ -269,7 +272,7 @@ function AdminDashboardContent() {
 
                   <Link
                     href={`/admin/forms/${form.id}`}
-                    className="p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    className="p-2 rounded-xl border border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                     title="Edit Formulir"
                   >
                     <Edit3 className="w-4 h-4" />

@@ -23,3 +23,4 @@ export async function adminFetch<T = unknown>(
   }));
   return json;
 }
+

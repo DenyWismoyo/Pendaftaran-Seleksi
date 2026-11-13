@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowDown,
   ArrowUp,
+  Eye,
+  FileUp,
   Loader2,
   Plus,
   Save,
-  Sparkles,
   Trash2,
+  Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -21,7 +23,7 @@ import {
 } from '@/types/selection';
 import { SELECTION_CATEGORIES } from '@/lib/constants';
 import { adminFetch } from '@/lib/adminClient';
-import { slugify } from '@/lib/utils';
+import { cn, slugify } from '@/lib/utils';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Teks Singkat' },
@@ -34,6 +36,69 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'radio', label: 'Radio Button (Pilih 1)' },
   { value: 'checkbox', label: 'Checkbox (Pilih Banyak)' },
   { value: 'file', label: 'Upload Berkas (PDF/Foto/Doc)' },
+];
+
+const QUICK_PRESETS: { label: string; field: Omit<SelectionField, 'id'> }[] = [
+  {
+    label: '+ NIK 16 Digit',
+    field: {
+      label: 'Nomor Induk Kependudukan (NIK)',
+      type: 'text',
+      required: true,
+      placeholder: '16 digit angka sesuai KTP',
+      description: '',
+      section: 'Data Kependudukan',
+      options: [],
+      accept: '.pdf,.jpg,.jpeg,.png',
+      maxSizeMB: 5,
+      width: 'half',
+    },
+  },
+  {
+    label: '+ Pendidikan Terakhir',
+    field: {
+      label: 'Pendidikan Terakhir',
+      type: 'select',
+      required: true,
+      placeholder: '',
+      description: '',
+      section: 'Latar Belakang',
+      options: ['SMA / SMK', 'D1 / D2 / D3', 'D4 / S1', 'S2 / S3'],
+      accept: '.pdf,.jpg,.jpeg,.png',
+      maxSizeMB: 5,
+      width: 'half',
+    },
+  },
+  {
+    label: '+ Upload Scan KTP',
+    field: {
+      label: 'Upload Scan / Foto KTP',
+      type: 'file',
+      required: true,
+      placeholder: '',
+      description: 'Format PDF/JPG/PNG maksimal 5 MB.',
+      section: 'Unggah Berkas',
+      options: [],
+      accept: '.pdf,.jpg,.jpeg,.png',
+      maxSizeMB: 5,
+      width: 'half',
+    },
+  },
+  {
+    label: '+ Upload CV / Portofolio',
+    field: {
+      label: 'Upload CV / Portofolio (PDF)',
+      type: 'file',
+      required: true,
+      placeholder: '',
+      description: 'Dokumen PDF maksimal 10 MB.',
+      section: 'Unggah Berkas',
+      options: [],
+      accept: '.pdf,.doc,.docx',
+      maxSizeMB: 10,
+      width: 'half',
+    },
+  },
 ];
 
 interface FormBuilderProps {
@@ -61,7 +126,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
     initialData?.requirementsNote || ''
   );
   const [requireAiPreScreening, setRequireAiPreScreening] = useState<boolean>(
-    initialData?.requireAiPreScreening ?? true
+    initialData?.requireAiPreScreening ?? false
   );
   const [aiCriteria, setAiCriteria] = useState(initialData?.aiCriteria || '');
 
@@ -96,6 +161,8 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
     ]
   );
 
+  const [showAutoAssist, setShowAutoAssist] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [aiTopic, setAiTopic] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -127,6 +194,17 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
         width: 'full',
       },
     ]);
+  };
+
+  const addPresetField = (preset: Omit<SelectionField, 'id'>) => {
+    setFields((prev) => [
+      ...prev,
+      {
+        ...preset,
+        id: `preset_${Date.now().toString(36)}_${prev.length + 1}`,
+      },
+    ]);
+    toast.success(`"${preset.label}" ditambahkan.`);
   };
 
   const updateField = (index: number, patch: Partial<SelectionField>) => {
@@ -171,7 +249,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
         }),
       });
       if (!res.success || !res.data) {
-        throw new Error(res.error || 'Gagal menghasilkan form dengan AI.');
+        throw new Error(res.error || 'Gagal menyusun struktur formulir.');
       }
 
       const d = res.data;
@@ -183,9 +261,10 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       if (Array.isArray(d.fields) && d.fields.length > 0) {
         setFields(d.fields);
       }
-      toast.success('Struktur formulir berhasil dirancang oleh Clario AI!');
+      setShowAutoAssist(false);
+      toast.success('Struktur formulir berhasil disusun.');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Gagal memanggil AI.');
+      toast.error(err instanceof Error ? err.message : 'Gagal menyusun struktur.');
     } finally {
       setGeneratingAi(false);
     }
@@ -237,7 +316,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
         throw new Error(res.error || 'Gagal menyimpan formulir.');
       }
       toast.success(
-        isEditing ? 'Formulir berhasil diperbarui!' : 'Formulir seleksi berhasil dibuat!'
+        isEditing ? 'Formulir diperbarui.' : 'Formulir seleksi dipublikasikan.'
       );
       router.push('/admin');
     } catch (err: unknown) {
@@ -249,413 +328,37 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
-      {/* AI Quick Generator */}
-      <section className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-slate-50 p-5 space-y-3">
-        <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
-          <Sparkles className="w-4 h-4 text-indigo-600" />
-          <span>Asisten Pembuat Formulir (Clario AI)</span>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <input
-            type="text"
-            value={aiTopic}
-            onChange={(e) => setAiTopic(e.target.value)}
-            placeholder="Contoh: Seleksi Peserta Pelatihan CNC & Pengelasan Industri Angkatan 4"
-            className="flex-1 px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+      {/* Studio Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={handleGenerateWithAi}
-            disabled={generatingAi}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 cursor-pointer shrink-0"
+            onClick={() => setShowAutoAssist((prev) => !prev)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
           >
-            {generatingAi ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>Susun Struktur Otomatis</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowPreview((prev) => !prev)}
+            className={cn(
+              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold cursor-pointer',
+              showPreview
+                ? 'bg-zinc-900 text-white border-zinc-900'
+                : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50'
             )}
-            <span>Generate Struktur Form</span>
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{showPreview ? 'Sembunyikan Pratinjau' : 'Tampilkan Pratinjau'}</span>
           </button>
         </div>
-      </section>
 
-      {/* Metadata Formulir */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
-          Pengaturan Program Seleksi
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Judul Program Seleksi *
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Contoh: Seleksi Calon Peserta Pelatihan Web Development"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Slug URL (/seleksi/slug)
-            </label>
-            <input
-              type="text"
-              required
-              value={slug}
-              onChange={(e) => setSlug(slugify(e.target.value))}
-              placeholder="seleksi-web-development"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Kategori
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {SELECTION_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Status Penerimaan
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as SelectionFormStatus)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="OPEN">Dibuka (Publik bisa mendaftar)</option>
-              <option value="DRAFT">Draf (Disembunyikan)</option>
-              <option value="CLOSED">Ditutup</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-slate-800 block">
-                Kuota (0 = Tanpa Batas)
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={quota}
-                onChange={(e) => setQuota(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-slate-800 block">
-                Batas Akhir
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Deskripsi Program
-            </label>
-            <textarea
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Jelaskan tujuan program dan sasaran peserta..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-sm font-semibold text-slate-800 block">
-              Catatan Persyaratan Berkas
-            </label>
-            <input
-              type="text"
-              value={requirementsNote}
-              onChange={(e) => setRequirementsNote(e.target.value)}
-              placeholder="Contoh: Siapkan KTP, Ijazah, dan CV dalam format PDF/JPG"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="sm:col-span-2 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
-            <label className="flex items-center gap-2.5 text-sm font-semibold text-slate-800 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={requireAiPreScreening}
-                onChange={(e) => setRequireAiPreScreening(e.target.checked)}
-                className="rounded text-indigo-600 focus:ring-indigo-500"
-              />
-              <span>Aktifkan Penilaian Awal Otomatis oleh Clario AI saat Pelamar Mendaftar</span>
-            </label>
-            {requireAiPreScreening && (
-              <input
-                type="text"
-                value={aiCriteria}
-                onChange={(e) => setAiCriteria(e.target.value)}
-                placeholder="Kriteria penilaian AI (misal: nilai motivasi, kesesuaian jurusan, dan kelengkapan berkas)"
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Builder Fields */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Susunan Field Formulir ({fields.length})
-            </h2>
-            <p className="text-xs text-slate-500">
-              Nama lengkap, email, dan nomor WhatsApp otomatis tersedia di bagian atas
-              formulir publik.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => addField('text')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Pertanyaan</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => addField('file')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Upload Berkas</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {fields.map((field, index) => {
-            const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type);
-            const isFile = field.type === 'file';
-
-            return (
-              <div
-                key={field.id + index}
-                className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">
-                    #{index + 1} • {isFile ? 'Unggah Berkas' : field.type.toUpperCase()}
-                  </span>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => moveField(index, -1)}
-                      disabled={index === 0}
-                      className="p-1.5 rounded-lg text-slate-500 hover:bg-white disabled:opacity-30 cursor-pointer"
-                      title="Naikkan"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveField(index, 1)}
-                      disabled={index === fields.length - 1}
-                      className="p-1.5 rounded-lg text-slate-500 hover:bg-white disabled:opacity-30 cursor-pointer"
-                      title="Turunkan"
-                    >
-                      <ArrowDown className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeField(index)}
-                      className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
-                      title="Hapus Field"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2 space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Label Pertanyaan / Nama Berkas
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={field.label}
-                      onChange={(e) =>
-                        updateField(index, { label: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Tipe Input
-                    </label>
-                    <select
-                      value={field.type}
-                      onChange={(e) =>
-                        updateField(index, { type: e.target.value as FieldType })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
-                    >
-                      {FIELD_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Grup / Section
-                    </label>
-                    <input
-                      type="text"
-                      value={field.section || ''}
-                      onChange={(e) =>
-                        updateField(index, { section: e.target.value })
-                      }
-                      placeholder="Informasi Pelamar"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Keterangan / Petunjuk
-                    </label>
-                    <input
-                      type="text"
-                      value={field.description || ''}
-                      onChange={(e) =>
-                        updateField(index, { description: e.target.value })
-                      }
-                      placeholder="Opsional"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs"
-                    />
-                  </div>
-
-                  <div className="flex items-end gap-4 pb-1.5">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={field.required}
-                        onChange={(e) =>
-                          updateField(index, { required: e.target.checked })
-                        }
-                        className="rounded text-indigo-600"
-                      />
-                      <span>Wajib diisi</span>
-                    </label>
-
-                    <select
-                      value={field.width || 'full'}
-                      onChange={(e) =>
-                        updateField(index, {
-                          width: e.target.value as 'full' | 'half',
-                        })
-                      }
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                    >
-                      <option value="full">Lebar Penuh</option>
-                      <option value="half">Setengah (2 Kolom)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {hasOptions && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Daftar Opsi (pisahkan dengan koma)
-                    </label>
-                    <input
-                      type="text"
-                      value={field.options.join(', ')}
-                      onChange={(e) =>
-                        updateField(index, {
-                          options: e.target.value.split(',').map((s) => s.trim()),
-                        })
-                      }
-                      placeholder="Opsi A, Opsi B, Opsi C"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs"
-                    />
-                  </div>
-                )}
-
-                {isFile && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 block">
-                        Format File Diterima
-                      </label>
-                      <input
-                        type="text"
-                        value={field.accept || '.pdf,.jpg,.jpeg,.png'}
-                        onChange={(e) =>
-                          updateField(index, { accept: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 block">
-                        Maksimum Ukuran (MB)
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={25}
-                        value={field.maxSizeMB || 5}
-                        onChange={(e) =>
-                          updateField(index, {
-                            maxSizeMB: Math.min(25, Math.max(1, Number(e.target.value) || 5)),
-                          })
-                        }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <div className="flex items-center justify-end gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 cursor-pointer shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-800 disabled:opacity-60 cursor-pointer shadow-sm"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -664,6 +367,499 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
           )}
           <span>{isEditing ? 'Simpan Perubahan' : 'Publikasikan Formulir'}</span>
         </button>
+      </div>
+
+      {/* Collapsible Auto-Assist */}
+      {showAutoAssist && (
+        <section className="rounded-2xl border border-zinc-300 bg-white p-5 space-y-3 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            Bantu Susun Draf Field dari Deskripsi Program
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="text"
+              value={aiTopic}
+              onChange={(e) => setAiTopic(e.target.value)}
+              placeholder="Contoh: Seleksi Peserta Pelatihan CNC & Pengelasan Industri Angkatan 4"
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={handleGenerateWithAi}
+              disabled={generatingAi}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 cursor-pointer shrink-0"
+            >
+              {generatingAi && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>Buat Draf Field</span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-6 items-start',
+          showPreview ? 'xl:grid-cols-12' : ''
+        )}
+      >
+        {/* Left: Form Editor */}
+        <div className={cn('space-y-6', showPreview ? 'xl:col-span-7' : '')}>
+          {/* Metadata */}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+            <h2 className="text-base font-bold text-zinc-900 border-b border-zinc-100 pb-3">
+              Informasi Program Seleksi
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Judul Program Seleksi *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  placeholder="Contoh: Seleksi Calon Peserta Pelatihan Web Development"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Slug URL (/seleksi/slug)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(slugify(e.target.value))}
+                  placeholder="seleksi-web-development"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Kategori
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+                >
+                  {SELECTION_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Status Penerimaan
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as SelectionFormStatus)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+                >
+                  <option value="OPEN">Dibuka (Publik bisa mendaftar)</option>
+                  <option value="DRAFT">Draf (Disembunyikan)</option>
+                  <option value="CLOSED">Ditutup</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-700 block">
+                    Kuota (0 = Bebas)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={quota}
+                    onChange={(e) => setQuota(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-700 block">
+                    Batas Akhir
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Deskripsi Program
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Jelaskan tujuan program dan sasaran peserta..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 block">
+                  Catatan Persyaratan Berkas
+                </label>
+                <input
+                  type="text"
+                  value={requirementsNote}
+                  onChange={(e) => setRequirementsNote(e.target.value)}
+                  placeholder="Contoh: Siapkan KTP, Ijazah, dan CV dalam format PDF/JPG"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                />
+              </div>
+
+              <div className="sm:col-span-2 rounded-xl bg-zinc-50 border border-zinc-200 p-3.5 space-y-2.5">
+                <label className="flex items-center gap-2 text-xs font-semibold text-zinc-800 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requireAiPreScreening}
+                    onChange={(e) => setRequireAiPreScreening(e.target.checked)}
+                    className="rounded accent-zinc-900"
+                  />
+                  <span>Aktifkan Skoring Awal Otomatis saat Pendaftar Mengirim Berkas</span>
+                </label>
+                {requireAiPreScreening && (
+                  <input
+                    type="text"
+                    value={aiCriteria}
+                    onChange={(e) => setAiCriteria(e.target.value)}
+                    placeholder="Kriteria penilaian panitia (misal: relevansi jurusan & kelengkapan dokumen)"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                  />
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Fields Editor */}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-zinc-900">
+                  Susunan Pertanyaan &amp; Berkas ({fields.length})
+                </h2>
+                <p className="text-xs text-zinc-500">
+                  Nama lengkap, email, dan WhatsApp otomatis tersedia di Langkah 1.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => addField('text')}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Pertanyaan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addField('file')}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Upload Berkas</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-zinc-400 mr-1">
+                Tambah Cepat:
+              </span>
+              {QUICK_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => addPresetField(preset.field)}
+                  className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-[11px] font-semibold text-zinc-700 cursor-pointer"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3.5">
+              {fields.map((field, index) => {
+                const hasOptions = ['select', 'radio', 'checkbox'].includes(
+                  field.type
+                );
+                const isFile = field.type === 'file';
+
+                return (
+                  <div
+                    key={field.id + index}
+                    className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-mono font-bold text-zinc-700 bg-white border border-zinc-200 px-2.5 py-0.5 rounded-md">
+                        #{index + 1} • {isFile ? 'UPLOAD BERKAS' : field.type.toUpperCase()}
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveField(index, -1)}
+                          disabled={index === 0}
+                          className="p-1.5 rounded-lg text-zinc-500 hover:bg-white disabled:opacity-30 cursor-pointer"
+                          title="Naikkan"
+                        >
+                          <ArrowUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveField(index, 1)}
+                          disabled={index === fields.length - 1}
+                          className="p-1.5 rounded-lg text-zinc-500 hover:bg-white disabled:opacity-30 cursor-pointer"
+                          title="Turunkan"
+                        >
+                          <ArrowDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeField(index)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          title="Hapus Field"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2 space-y-1">
+                        <label className="text-[11px] font-semibold text-zinc-600 block">
+                          Label Pertanyaan / Nama Dokumen
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={field.label}
+                          onChange={(e) =>
+                            updateField(index, { label: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-zinc-600 block">
+                          Tipe Input
+                        </label>
+                        <select
+                          value={field.type}
+                          onChange={(e) =>
+                            updateField(index, {
+                              type: e.target.value as FieldType,
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-sm"
+                        >
+                          {FIELD_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-zinc-600 block">
+                          Langkah / Section
+                        </label>
+                        <input
+                          type="text"
+                          value={field.section || ''}
+                          onChange={(e) =>
+                            updateField(index, { section: e.target.value })
+                          }
+                          placeholder="Unggah Berkas"
+                          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-zinc-600 block">
+                          Petunjuk Singkat
+                        </label>
+                        <input
+                          type="text"
+                          value={field.description || ''}
+                          onChange={(e) =>
+                            updateField(index, { description: e.target.value })
+                          }
+                          placeholder="Opsional"
+                          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                        />
+                      </div>
+
+                      <div className="flex items-end gap-3 pb-1.5">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) =>
+                              updateField(index, { required: e.target.checked })
+                            }
+                            className="rounded accent-zinc-900"
+                          />
+                          <span>Wajib</span>
+                        </label>
+
+                        <select
+                          value={field.width || 'full'}
+                          onChange={(e) =>
+                            updateField(index, {
+                              width: e.target.value as 'full' | 'half',
+                            })
+                          }
+                          className="px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white text-xs"
+                        >
+                          <option value="full">1 Kolom</option>
+                          <option value="half">1/2 Kolom</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {hasOptions && (
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-zinc-600 block">
+                          Opsi Pilihan (pisahkan dengan koma)
+                        </label>
+                        <input
+                          type="text"
+                          value={field.options.join(', ')}
+                          onChange={(e) =>
+                            updateField(index, {
+                              options: e.target.value
+                                .split(',')
+                                .map((s) => s.trim()),
+                            })
+                          }
+                          placeholder="Opsi A, Opsi B, Opsi C"
+                          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                        />
+                      </div>
+                    )}
+
+                    {isFile && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-zinc-600 block">
+                            Format Diterima
+                          </label>
+                          <input
+                            type="text"
+                            value={field.accept || '.pdf,.jpg,.jpeg,.png'}
+                            onChange={(e) =>
+                              updateField(index, { accept: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-zinc-600 block">
+                            Batas Ukuran (MB)
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={25}
+                            value={field.maxSizeMB || 5}
+                            onChange={(e) =>
+                              updateField(index, {
+                                maxSizeMB: Math.min(
+                                  25,
+                                  Math.max(1, Number(e.target.value) || 5)
+                                ),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        {/* Right: Live Preview */}
+        {showPreview && (
+          <aside className="xl:col-span-5 xl:sticky xl:top-24 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <span className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-500">
+                Pratinjau Tampilan Pelamar
+              </span>
+              <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold">
+                Live
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-zinc-500">
+                {category}
+              </span>
+              <h3 className="text-lg font-bold text-zinc-900">
+                {title || 'Judul Program Seleksi'}
+              </h3>
+              <p className="text-xs text-zinc-500">
+                {description || 'Deskripsi singkat program akan tampil di sini.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
+              {fields.map((f, i) => (
+                <div
+                  key={f.id + i}
+                  className={cn(
+                    'space-y-1',
+                    f.width === 'half' ? 'col-span-1' : 'col-span-2'
+                  )}
+                >
+                  <label className="text-xs font-semibold text-zinc-800 block">
+                    {f.label || 'Tanpa Label'}{' '}
+                    {f.required && <span className="text-rose-500">*</span>}
+                  </label>
+                  {f.type === 'file' ? (
+                    <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3 text-center text-[11px] text-zinc-500 flex flex-col items-center gap-1">
+                      <FileUp className="w-4 h-4 text-zinc-400" />
+                      <span>
+                        Upload ({f.accept || '.pdf,.jpg'}) • Maks {f.maxSizeMB || 5} MB
+                      </span>
+                    </div>
+                  ) : f.type === 'textarea' ? (
+                    <div className="h-14 rounded-lg border border-zinc-200 bg-zinc-50" />
+                  ) : (
+                    <div className="h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 flex items-center text-[11px] text-zinc-400">
+                      {f.type === 'select'
+                        ? '-- Pilih --'
+                        : f.placeholder || `Input ${f.type}`}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
       </div>
     </form>
   );
