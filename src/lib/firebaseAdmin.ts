@@ -154,7 +154,8 @@ export async function verifyAdminRequest(
       role,
       token: decoded,
     };
-  } catch {
+  } catch (err) {
+    console.error('[verifyAdminRequest] Gagal verifikasi admin:', err);
     return null;
   }
 }

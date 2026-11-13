@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { Loader2, LockKeyhole, LogIn } from 'lucide-react';
@@ -13,10 +13,11 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const manualLoginRef = useRef(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+      if (user && !manualLoginRef.current) {
         const res = await adminFetch('/api/admin/me');
         if (res.success) {
           router.replace('/admin');
@@ -34,6 +35,7 @@ export default function AdminLoginPage() {
     }
 
     setLoading(true);
+    manualLoginRef.current = true;
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       const check = await adminFetch('/api/admin/me');
@@ -49,6 +51,7 @@ export default function AdminLoginPage() {
         err instanceof Error ? err.message : 'Email atau kata sandi salah.'
       );
     } finally {
+      manualLoginRef.current = false;
       setLoading(false);
     }
   };
