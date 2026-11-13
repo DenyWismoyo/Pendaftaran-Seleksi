@@ -2,23 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Copy,
-  Edit3,
-  ExternalLink,
-  FilePlus2,
-  FolderKanban,
-  Loader2,
-  Trash2,
-  Users,
-} from 'lucide-react';
+import { FilePlus2, FolderKanban, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminGuard from '@/components/AdminGuard';
+import AdminFormListItem from '@/components/admin/AdminFormListItem';
+import AdminFormStats from '@/components/admin/AdminFormStats';
 import { adminFetch } from '@/lib/adminClient';
-import { FORM_STATUS_META } from '@/lib/constants';
 import { STARTER_FORM_TEMPLATES } from '@/lib/defaultTemplates';
 import { SelectionForm, SelectionFormStatus } from '@/types/selection';
-import { cn, formatDateID } from '@/lib/utils';
 
 function AdminDashboardContent() {
   const [forms, setForms] = useState<SelectionForm[]>([]);
@@ -100,40 +91,15 @@ function AdminDashboardContent() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
-        <div className="ui-card-compact p-4 sm:p-5">
-          <p className="ui-eyebrow">
-            Total Formulir
-          </p>
-          <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1 font-mono">
-            {forms.length}
-          </p>
-        </div>
-        <div className="ui-card-compact p-4 sm:p-5">
-          <p className="ui-eyebrow">
-            Sedang Dibuka
-          </p>
-          <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1 font-mono">
-            {openForms}
-          </p>
-        </div>
-        <div className="ui-card-compact p-4 sm:p-5">
-          <p className="ui-eyebrow">
-            Total Pendaftar Masuk
-          </p>
-          <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1 font-mono">
-            {totalSubmissions}
-          </p>
-        </div>
-      </div>
+      <AdminFormStats
+        totalForms={forms.length}
+        openForms={openForms}
+        totalSubmissions={totalSubmissions}
+      />
 
-      {/* Header */}
       <div className="ui-mobile-pad flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="ui-section-title">
-            Manajemen Formulir Seleksi
-          </h1>
+          <h1 className="ui-section-title">Manajemen Formulir Seleksi</h1>
           <p className="text-xs text-zinc-500">
             Kelola jadwal pembukaan, susunan berkas unggahan, dan tautan publik.
           </p>
@@ -153,17 +119,13 @@ function AdminDashboardContent() {
             <span>Import Template Siap Pakai</span>
           </button>
 
-          <Link
-            href="/admin/forms/new"
-            className="ui-btn-primary text-xs sm:text-sm"
-          >
+          <Link href="/admin/forms/new" className="ui-btn-primary text-xs sm:text-sm">
             <FilePlus2 className="w-4 h-4" />
             <span>Buat Formulir Baru</span>
           </Link>
         </div>
       </div>
 
-      {/* Forms List */}
       {loading ? (
         <div className="py-16 flex justify-center">
           <Loader2 className="w-7 h-7 animate-spin text-zinc-900" />
@@ -180,116 +142,14 @@ function AdminDashboardContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {forms.map((form) => {
-            const meta = FORM_STATUS_META[form.status] || FORM_STATUS_META.OPEN;
-            const publicPath = `/seleksi/${form.slug}`;
-
-            return (
-              <div
-                key={form.id}
-                className="ui-card p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-              >
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-semibold text-zinc-700 bg-zinc-100 px-2.5 py-0.5 rounded-md">
-                      {form.category}
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[11px] font-semibold px-2.5 py-0.5 rounded-md border',
-                        meta.badgeClass
-                      )}
-                    >
-                      {meta.label}
-                    </span>
-                    <span className="text-xs text-zinc-400">
-                      Dibuat {formatDateID(form.createdAt)}
-                    </span>
-                  </div>
-
-                  <h2 className="text-base sm:text-lg font-bold text-zinc-900 truncate">
-                    {form.title}
-                  </h2>
-
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                    <span className="font-mono text-zinc-600">{publicPath}</span>
-                    <span>
-                      <strong>{form.fields.length}</strong> field (
-                      {form.fields.filter((f) => f.type === 'file').length} berkas)
-                    </span>
-                    <span>
-                      <strong>{form.submissionCount || 0}</strong> pendaftar
-                      {form.quota > 0 ? ` / ${form.quota}` : ''}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <select
-                    value={form.status}
-                    onChange={(e) =>
-                      handleStatusChange(
-                        form.id,
-                        e.target.value as SelectionFormStatus
-                      )
-                    }
-                    className="px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold bg-white"
-                  >
-                    <option value="OPEN">Dibuka</option>
-                    <option value="DRAFT">Draf</option>
-                    <option value="CLOSED">Ditutup</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const fullUrl = `${window.location.origin}${publicPath}`;
-                      navigator.clipboard.writeText(fullUrl);
-                      toast.success('Tautan publik disalin.');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Salin Link</span>
-                  </button>
-
-                  <Link
-                    href={publicPath}
-                    target="_blank"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Buka</span>
-                  </Link>
-
-                  <Link
-                    href={`/admin/submissions?formId=${form.id}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
-                  >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Pendaftar</span>
-                  </Link>
-
-                  <Link
-                    href={`/admin/forms/${form.id}`}
-                    className="p-2 rounded-xl border border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-                    title="Edit Formulir"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(form)}
-                    className="p-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer"
-                    title="Hapus Formulir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {forms.map((form) => (
+            <AdminFormListItem
+              key={form.id}
+              form={form}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDelete}
+            />
+          ))}
         </div>
       )}
     </div>

@@ -16,6 +16,7 @@
 - **SR-009 (Bahasa Natural & Profesional):** Gunakan Bahasa Indonesia yang lugas dan manusiawi seperti sistem penerimaan resmi. Jangan membebani tampilan pelamar dengan label "AI" atau ikon bintang/sparkles yang berlebihan.
 - **SR-010 (Print-Friendly Pass):** Komponen bukti registrasi wajib mempertahankan kelas `.no-print` dan `.print-only-card` agar kartu QR tetap tercetak rapi lewat `window.print()`.
 
-## 4. Verifikasi Sebelum Commit / Push
+## 4. Arsitektur Modular & Verifikasi Sebelum Commit / Push
 - **SR-011:** Setiap perubahan wajib lolos `npx tsc --noEmit` dan `npm run build` tanpa error.
+- **SR-012 (Page Tipis & Komponen Spesifik):** File `src/app/**/page.tsx` wajib ringkas (`<= 200` baris) — fokus pada import, orkestrasi state/logika, dan komposisi komponen. Pecah bagian UI ke subfolder domain di `src/components/<fitur>/` (`home/`, `templates/`, `status/`, `seleksi/`, `admin/`) serta logika kompleks ke custom hook di `src/hooks/`.
 
