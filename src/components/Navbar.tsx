@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileCheck, Search, Settings2 } from 'lucide-react';
+import { FileCheck, FileDown, Search, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Navbar() {
@@ -10,6 +10,7 @@ export default function Navbar() {
 
   const navItems = [
     { href: '/', label: 'Program Seleksi', icon: FileCheck },
+    { href: '/template-dokumen', label: 'Template Dokumen', icon: FileDown },
     { href: '/cek-status', label: 'Lacak Pendaftaran', icon: Search },
   ];
 

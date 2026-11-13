@@ -1077,11 +1077,24 @@ function SelectionFormContent() {
         )}
 
         {form.requirementsNote && (
-          <div className="rounded-xl bg-amber-50/80 border border-amber-200 p-4 text-xs sm:text-sm text-amber-950">
-            <strong className="font-semibold block mb-1">
-              Persyaratan Dokumen:
-            </strong>
-            <p>{form.requirementsNote}</p>
+          <div className="rounded-xl bg-amber-50/80 border border-amber-200 p-4 text-xs sm:text-sm text-amber-950 space-y-2">
+            <div>
+              <strong className="font-semibold block mb-1">
+                Persyaratan Dokumen:
+              </strong>
+              <p>{form.requirementsNote}</p>
+            </div>
+            <div>
+              <Link
+                href="/template-dokumen"
+                target="_blank"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Unduh Format Surat &amp; Template Dokumen (.doc / .md)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         )}
 
