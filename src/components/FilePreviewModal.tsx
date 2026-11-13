@@ -14,14 +14,14 @@ export default function FilePreviewModal({ file, onClose }: FilePreviewModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+      className="ui-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl border border-zinc-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl"
+        className="ui-modal-panel max-w-4xl max-h-[92vh] sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between gap-3">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-bold text-zinc-900 truncate">
               {file.fieldLabel} — {file.fileName}
@@ -35,10 +35,10 @@ export default function FilePreviewModal({ file, onClose }: FilePreviewModalProp
               href={file.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+              className="ui-btn-secondary px-3 py-1.5 rounded-lg text-xs"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Buka Tab Baru</span>
+              <span className="hidden sm:inline">Buka Tab Baru</span>
             </a>
             <button
               type="button"

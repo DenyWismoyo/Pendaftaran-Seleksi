@@ -329,12 +329,12 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
   return (
     <form onSubmit={handleSave} className="space-y-6">
       {/* Studio Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="ui-mobile-pad flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setShowAutoAssist((prev) => !prev)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+            className="ui-btn-secondary px-3.5 py-2 text-xs"
           >
             <Wand2 className="w-3.5 h-3.5" />
             <span>Susun Struktur Otomatis</span>
@@ -344,10 +344,10 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
             type="button"
             onClick={() => setShowPreview((prev) => !prev)}
             className={cn(
-              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold cursor-pointer',
+              'px-3.5 py-2 text-xs',
               showPreview
-                ? 'bg-zinc-900 text-white border-zinc-900'
-                : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50'
+                ? 'ui-btn-primary'
+                : 'ui-btn-secondary'
             )}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -358,7 +358,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-800 disabled:opacity-60 cursor-pointer shadow-sm"
+          className="ui-btn-accent px-5 text-xs sm:text-sm shadow-sm"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -371,8 +371,8 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
 
       {/* Collapsible Auto-Assist */}
       {showAutoAssist && (
-        <section className="rounded-2xl border border-zinc-300 bg-white p-5 space-y-3 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+        <section className="ui-card-compact sm:border-zinc-300 p-5 space-y-3">
+          <p className="ui-eyebrow">
             Bantu Susun Draf Field dari Deskripsi Program
           </p>
           <div className="flex flex-col sm:flex-row gap-2.5">
@@ -381,13 +381,13 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
               value={aiTopic}
               onChange={(e) => setAiTopic(e.target.value)}
               placeholder="Contoh: Seleksi Peserta Pelatihan CNC & Pengelasan Industri Angkatan 4"
-              className="flex-1 px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              className="ui-input flex-1"
             />
             <button
               type="button"
               onClick={handleGenerateWithAi}
               disabled={generatingAi}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 cursor-pointer shrink-0"
+              className="ui-btn-primary shrink-0"
             >
               {generatingAi && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Buat Draf Field</span>
@@ -398,14 +398,14 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
 
       <div
         className={cn(
-          'grid grid-cols-1 gap-6 items-start',
+          'grid grid-cols-1 gap-4 sm:gap-6 items-start',
           showPreview ? 'xl:grid-cols-12' : ''
         )}
       >
         {/* Left: Form Editor */}
-        <div className={cn('space-y-6', showPreview ? 'xl:col-span-7' : '')}>
+        <div className={cn('space-y-4 sm:space-y-6', showPreview ? 'xl:col-span-7' : '')}>
           {/* Metadata */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <section className="ui-card p-5 sm:p-6 space-y-4">
             <h2 className="text-base font-bold text-zinc-900 border-b border-zinc-100 pb-3">
               Informasi Program Seleksi
             </h2>
@@ -421,7 +421,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="Contoh: Seleksi Calon Peserta Pelatihan Web Development"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  className="ui-input"
                 />
               </div>
 
@@ -435,7 +435,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                   value={slug}
                   onChange={(e) => setSlug(slugify(e.target.value))}
                   placeholder="seleksi-web-development"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  className="ui-input font-mono"
                 />
               </div>
 
@@ -446,7 +446,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+                  className="ui-input bg-white"
                 >
                   {SELECTION_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -463,7 +463,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as SelectionFormStatus)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+                  className="ui-input bg-white"
                 >
                   <option value="OPEN">Dibuka (Publik bisa mendaftar)</option>
                   <option value="DRAFT">Draf (Disembunyikan)</option>
@@ -481,7 +481,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                     min={0}
                     value={quota}
                     onChange={(e) => setQuota(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                    className="ui-input"
                   />
                 </div>
 
@@ -493,7 +493,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                    className="ui-input"
                   />
                 </div>
               </div>
@@ -507,7 +507,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Jelaskan tujuan program dan sasaran peserta..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                  className="ui-input"
                 />
               </div>
 
@@ -520,11 +520,11 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                   value={requirementsNote}
                   onChange={(e) => setRequirementsNote(e.target.value)}
                   placeholder="Contoh: Siapkan KTP, Ijazah, dan CV dalam format PDF/JPG"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                  className="ui-input"
                 />
               </div>
 
-              <div className="sm:col-span-2 rounded-xl bg-zinc-50 border border-zinc-200 p-3.5 space-y-2.5">
+              <div className="sm:col-span-2 ui-inset p-3.5 space-y-2.5">
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-800 cursor-pointer">
                   <input
                     type="checkbox"
@@ -548,7 +548,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
           </section>
 
           {/* Fields Editor */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <section className="ui-card p-5 sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3">
               <div>
                 <h2 className="text-base font-bold text-zinc-900">
@@ -804,7 +804,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
 
         {/* Right: Live Preview */}
         {showPreview && (
-          <aside className="xl:col-span-5 xl:sticky xl:top-24 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
+          <aside className="xl:col-span-5 xl:sticky xl:top-24 ui-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <span className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-500">
                 Pratinjau Tampilan Pelamar

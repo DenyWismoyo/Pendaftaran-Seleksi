@@ -36,3 +36,34 @@ yang tepercaya, tenang, dan fungsional** — bukan tampilan demo AI yang seragam
 3. **Kartu Bukti QR (`src/components/RegistrationCard.tsx`):**
    Selalu dukung cetak bersih dengan kelas `.no-print` untuk menyembunyikan navigasi dan `.print-only-card` untuk menjaga bingkai kartu saat `window.print()`.
 
+
+
+## Standarisasi Global CSS (`src/app/globals.css`)
+
+Seluruh halaman dan komponen wajib menggunakan utility classes `@layer components` di `src/app/globals.css` agar tampilan editorial konsisten di desktop (`>= 640px`) dan **borderless penuh layar di ponsel (`< 640px`)**:
+
+### Container & Padding
+- `.ui-shell`: Container halaman publik standar (`max-w-6xl`, `px-0 sm:px-6`, `py-5 sm:py-10`).
+- `.ui-shell-narrow`: Container sempit untuk alur baca / form wizard (`max-w-4xl`, `px-0 sm:px-6`).
+- `.ui-shell-admin`: Container dashboard panitia (`max-w-7xl`, `px-0 sm:px-6`, `py-4 sm:py-6`).
+- `.ui-mobile-pad`: Wajib dipakai pada heading, breadcrumb, atau filter bar di luar card agar memiliki `px-4 sm:px-0` di ponsel.
+
+### Surface & Borderless Mobile Cards
+- `.ui-card`: Card utama (`rounded-none border-y shadow-none` di ponsel -> `sm:rounded-2xl sm:border sm:shadow-sm` di desktop).
+- `.ui-card-compact`: Card ringkas / toolbar (`p-4`, borderless mobile).
+- `.ui-card-dark`: Panel gelap kontras tinggi (step panduan, header kartu).
+- `.ui-card-dashed`: Empty state card.
+- `.ui-inset`: Sub-kotak isian di dalam card (`bg-zinc-50 border border-zinc-200 rounded-xl`).
+
+### Callouts, Typography, Form & Actions
+- `.ui-callout-amber` / `.ui-callout-emerald` / `.ui-callout-rose`: Box catatan/peringatan standar.
+- `.ui-eyebrow` / `.ui-page-title` / `.ui-section-title` / `.ui-label`: Hierarki tipografi.
+- `.ui-input`: Standar input, textarea, dan select.
+- `.ui-btn-primary` / `.ui-btn-accent` / `.ui-btn-secondary` / `.ui-btn-danger`: Standar tombol aksi.
+- `.ui-chip` / `.ui-chip-active`: Filter chip kategori.
+- `.ui-badge`: Pill badge standar.
+
+### Modals & Utilitas
+- `.ui-modal-backdrop` + `.ui-modal-panel`: Bottom-sheet borderless di ponsel (`items-end rounded-t-2xl`), dialog terpusat di desktop (`sm:items-center sm:rounded-2xl`).
+- `.no-scrollbar`: Menghilangkan scrollbar horizontal pada navigasi/chip strip yang bisa digeser.
+- `.no-print` & `.print-only-card`: Pengaturan cetak Kartu Bukti Pendaftaran (wajib dipertahankan).

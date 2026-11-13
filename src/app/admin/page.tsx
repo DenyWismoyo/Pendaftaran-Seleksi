@@ -99,39 +99,39 @@ function AdminDashboardContent() {
   const openForms = forms.filter((f) => f.status === 'OPEN').length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="ui-card-compact p-4 sm:p-5">
+          <p className="ui-eyebrow">
             Total Formulir
           </p>
-          <p className="text-3xl font-bold text-zinc-900 mt-1 font-mono">
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1 font-mono">
             {forms.length}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+        <div className="ui-card-compact p-4 sm:p-5">
+          <p className="ui-eyebrow">
             Sedang Dibuka
           </p>
-          <p className="text-3xl font-bold text-emerald-700 mt-1 font-mono">
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1 font-mono">
             {openForms}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+        <div className="ui-card-compact p-4 sm:p-5">
+          <p className="ui-eyebrow">
             Total Pendaftar Masuk
           </p>
-          <p className="text-3xl font-bold text-zinc-900 mt-1 font-mono">
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1 font-mono">
             {totalSubmissions}
           </p>
         </div>
       </div>
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="ui-mobile-pad flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
+          <h1 className="ui-section-title">
             Manajemen Formulir Seleksi
           </h1>
           <p className="text-xs text-zinc-500">
@@ -143,7 +143,7 @@ function AdminDashboardContent() {
           <button
             onClick={handleImportStarterTemplates}
             disabled={seeding}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-700 text-xs sm:text-sm font-semibold hover:bg-zinc-50 disabled:opacity-60 cursor-pointer"
+            className="ui-btn-secondary text-xs sm:text-sm"
           >
             {seeding ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -155,7 +155,7 @@ function AdminDashboardContent() {
 
           <Link
             href="/admin/forms/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-colors"
+            className="ui-btn-primary text-xs sm:text-sm"
           >
             <FilePlus2 className="w-4 h-4" />
             <span>Buat Formulir Baru</span>
@@ -169,7 +169,7 @@ function AdminDashboardContent() {
           <Loader2 className="w-7 h-7 animate-spin text-zinc-900" />
         </div>
       ) : forms.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center space-y-3">
+        <div className="ui-card-dashed p-10 sm:p-12 text-center space-y-3">
           <p className="text-base font-bold text-zinc-800">
             Belum ada formulir seleksi
           </p>
@@ -187,7 +187,7 @@ function AdminDashboardContent() {
             return (
               <div
                 key={form.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                className="ui-card p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
               >
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

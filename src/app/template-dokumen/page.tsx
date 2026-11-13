@@ -96,8 +96,8 @@ export default function DocumentTemplatesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
-      <div>
+    <div className="ui-shell space-y-5 sm:space-y-6">
+      <div className="ui-mobile-pad">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900"
@@ -108,14 +108,14 @@ export default function DocumentTemplatesPage() {
       </div>
 
       {/* Editorial Header */}
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 shadow-sm space-y-4">
+      <section className="ui-card p-5 sm:p-8 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
               <FileText className="w-3.5 h-3.5" />
               <span>Bank Template Dokumen Resmi</span>
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
+            <h1 className="ui-page-title">
               Unduh Format Dokumen &amp; Surat Persyaratan
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 leading-relaxed">
@@ -129,7 +129,7 @@ export default function DocumentTemplatesPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs sm:text-sm text-amber-950">
+        <div className="ui-callout-amber text-xs sm:text-sm">
           <strong className="font-semibold block mb-1">
             Petunjuk Penggunaan untuk Pelamar:
           </strong>
@@ -143,18 +143,16 @@ export default function DocumentTemplatesPage() {
       </section>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
+      <div className="ui-mobile-pad flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center sm:flex-wrap gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border',
-                selectedCategory === cat
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900'
+                'shrink-0 whitespace-nowrap',
+                selectedCategory === cat ? 'ui-chip-active' : 'ui-chip'
               )}
             >
               {cat}
@@ -169,22 +167,22 @@ export default function DocumentTemplatesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama template..."
-            className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-zinc-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            className="ui-input pl-9 bg-white"
           />
         </div>
       </div>
 
       {/* Template Grid */}
       {filteredTemplates.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center text-sm text-zinc-500">
+        <div className="ui-card-dashed p-10 sm:p-12 text-center text-sm text-zinc-500">
           Tidak ada template dokumen yang cocok dengan pencarian Anda.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
           {filteredTemplates.map((tpl) => (
             <article
               key={tpl.slug}
-              className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm flex flex-col justify-between gap-5 hover:border-zinc-300 transition-colors"
+              className="ui-card p-5 sm:p-6 flex flex-col justify-between gap-5 sm:hover:border-zinc-300 transition-colors"
             >
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -214,7 +212,7 @@ export default function DocumentTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => handleDownloadWord(tpl)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors cursor-pointer"
+                  className="ui-btn-primary px-3.5 py-2 text-xs"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Unduh Word (.doc)</span>
@@ -223,7 +221,7 @@ export default function DocumentTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => handleDownloadMarkdown(tpl)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                  className="ui-btn-secondary px-3 py-2 text-xs"
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
                   <span>Unduh .md</span>
@@ -235,7 +233,7 @@ export default function DocumentTemplatesPage() {
                     setPreviewMode('formatted');
                     setPreviewTpl(tpl);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer ml-auto"
+                  className="ui-btn-secondary px-3 py-2 text-xs ml-auto"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   <span>Pratinjau</span>
@@ -249,14 +247,14 @@ export default function DocumentTemplatesPage() {
       {/* Preview Modal */}
       {previewTpl && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="ui-modal-backdrop"
           onClick={() => setPreviewTpl(null)}
         >
           <div
-            className="bg-white rounded-2xl border border-zinc-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl"
+            className="ui-modal-panel max-w-4xl max-h-[92vh] sm:max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-3.5 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-zinc-900 truncate">
                   {previewTpl.title}
@@ -295,7 +293,7 @@ export default function DocumentTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => handleCopyMarkdown(previewTpl)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                  className="ui-btn-secondary px-2.5 py-1.5 rounded-lg text-xs"
                 >
                   {copiedSlug === previewTpl.slug ? (
                     <Check className="w-3.5 h-3.5 text-emerald-700" />
@@ -308,7 +306,7 @@ export default function DocumentTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => handleDownloadWord(previewTpl)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer"
+                  className="ui-btn-primary px-3 py-1.5 rounded-lg text-xs"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Word (.doc)</span>
@@ -317,7 +315,7 @@ export default function DocumentTemplatesPage() {
                 <button
                   type="button"
                   onClick={() => handleDownloadMarkdown(previewTpl)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                  className="ui-btn-secondary px-2.5 py-1.5 rounded-lg text-xs"
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
                   <span>.md</span>

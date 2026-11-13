@@ -7,10 +7,10 @@ import {
   Download,
   ExternalLink,
   Eye,
+  FileCheck2,
   FileText,
   Loader2,
   Search,
-  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminGuard from '@/components/AdminGuard';
@@ -250,9 +250,9 @@ function SubmissionsContent() {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Pipeline Summary Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+      <div className="ui-mobile-pad grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
         {[
           { key: 'ALL', label: 'Semua Pelamar', count: statusCounts.ALL },
           { key: 'SUBMITTED', label: 'Menunggu', count: statusCounts.SUBMITTED },
@@ -278,7 +278,7 @@ function SubmissionsContent() {
       </div>
 
       {/* Filter & Bulk Action Toolbar */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex flex-wrap items-center gap-3 justify-between">
+      <div className="ui-card-compact p-4 flex flex-wrap items-center gap-3 justify-between">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           <div className="relative min-w-[220px] flex-1 max-w-xs">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -287,7 +287,7 @@ function SubmissionsContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nama, email, atau kode..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-zinc-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              className="ui-input pl-9 py-2 text-xs sm:text-sm"
             />
           </div>
 
@@ -298,7 +298,7 @@ function SubmissionsContent() {
               setSelectedSub(null);
               setSelectedIds([]);
             }}
-            className="px-3 py-2 rounded-xl border border-zinc-200 text-xs sm:text-sm bg-white"
+            className="ui-input w-auto py-2 px-3 bg-white text-xs sm:text-sm"
           >
             <option value="">Semua Program Seleksi</option>
             {forms.map((f) => (
@@ -341,7 +341,7 @@ function SubmissionsContent() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+            className="ui-btn-secondary px-3.5 py-2 text-xs"
           >
             <Download className="w-4 h-4" />
             <span>Export CSV</span>
@@ -354,13 +354,13 @@ function SubmissionsContent() {
           <Loader2 className="w-7 h-7 animate-spin text-zinc-900" />
         </div>
       ) : filteredSubmissions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center text-sm text-zinc-500">
+        <div className="ui-card-dashed p-10 sm:p-12 text-center text-sm text-zinc-500">
           Belum ada data pendaftar yang sesuai filter.
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
           {/* List Pendaftar */}
-          <div className="lg:col-span-5 space-y-2.5 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="lg:col-span-5 space-y-2 sm:space-y-2.5 max-h-[75vh] overflow-y-auto sm:pr-1">
             {filteredSubmissions.map((sub) => {
               const meta =
                 SUBMISSION_STATUS_META[sub.status] ||
@@ -372,10 +372,10 @@ function SubmissionsContent() {
                 <div
                   key={sub.id}
                   className={cn(
-                    'rounded-2xl border p-4 transition-all flex items-start gap-3',
+                    'ui-card-compact p-4 transition-all flex items-start gap-3',
                     isActive
-                      ? 'border-zinc-900 bg-white shadow-sm ring-1 ring-zinc-900'
-                      : 'border-zinc-200 bg-white hover:border-zinc-300'
+                      ? 'sm:border-zinc-900 bg-zinc-50/70 sm:bg-white sm:ring-1 sm:ring-zinc-900'
+                      : 'sm:hover:border-zinc-300'
                   )}
                 >
                   <input
@@ -427,7 +427,7 @@ function SubmissionsContent() {
 
           {/* Detail Panel */}
           {selectedSub && (
-            <div className="lg:col-span-7 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-6">
+            <div className="lg:col-span-7 ui-card p-5 sm:p-6 space-y-6">
               <div className="border-b border-zinc-100 pb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <span className="text-xs font-mono text-emerald-700 font-bold">
@@ -446,12 +446,12 @@ function SubmissionsContent() {
                   type="button"
                   onClick={handleAiEvaluate}
                   disabled={evaluatingAi}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-700 text-xs font-semibold hover:bg-zinc-100 disabled:opacity-60 cursor-pointer"
+                  className="ui-btn-secondary bg-zinc-50 px-3.5 py-2 text-xs hover:bg-zinc-100"
                 >
                   {evaluatingAi ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
+                    <FileCheck2 className="w-3.5 h-3.5 text-zinc-600" />
                   )}
                   <span>
                     {selectedSub.aiEvaluation
@@ -582,7 +582,7 @@ function SubmissionsContent() {
                     onChange={(e) =>
                       setReviewStatus(e.target.value as SubmissionStatus)
                     }
-                    className="px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+                    className="ui-input bg-white"
                   >
                     <option value="SUBMITTED">Menunggu Verifikasi</option>
                     <option value="REVIEWING">Dalam Peninjauan</option>
@@ -594,7 +594,7 @@ function SubmissionsContent() {
                     type="button"
                     onClick={handleSaveReview}
                     disabled={savingReview}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 cursor-pointer transition-colors"
+                    className="ui-btn-primary"
                   >
                     {savingReview && <Loader2 className="w-4 h-4 animate-spin" />}
                     <span>Simpan Keputusan</span>
@@ -606,7 +606,7 @@ function SubmissionsContent() {
                   value={reviewerNote}
                   onChange={(e) => setReviewerNote(e.target.value)}
                   placeholder="Catatan resmi untuk pelamar (tampil di halaman Lacak Pendaftaran)..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+                  className="ui-input"
                 />
               </div>
             </div>

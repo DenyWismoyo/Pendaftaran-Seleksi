@@ -77,17 +77,17 @@ export default function HomePage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
+    <div className="ui-shell space-y-6 sm:space-y-10">
       {/* Editorial Asymmetric Hero */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-7 rounded-2xl border border-zinc-200 bg-white p-7 sm:p-9 flex flex-col justify-between shadow-sm">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+        <div className="lg:col-span-7 ui-card p-5 sm:p-9 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-600" />
               <span>{openCount} Seleksi Aktif Dibuka</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-[1.15]">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-[1.15]">
               Portal Pendaftaran &amp; Seleksi Berkas Peserta
             </h1>
 
@@ -101,9 +101,9 @@ export default function HomePage() {
           {/* Quick Status Lookup Bar */}
           <form
             onSubmit={handleQuickLookup}
-            className="mt-7 pt-6 border-t border-zinc-100 space-y-2.5"
+            className="mt-6 sm:mt-7 pt-5 sm:pt-6 border-t border-zinc-100 space-y-2.5"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            <p className="ui-eyebrow">
               Sudah mendaftar? Lacak status Anda secara langsung
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
@@ -113,7 +113,7 @@ export default function HomePage() {
                 value={quickCode}
                 onChange={(e) => setQuickCode(e.target.value.toUpperCase())}
                 placeholder="Kode (SEL-2026-XXXXXX)"
-                className="sm:col-span-5 px-3.5 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs sm:text-sm font-mono uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="sm:col-span-5 ui-input bg-zinc-50 font-mono uppercase text-xs sm:text-sm"
               />
               <input
                 type="email"
@@ -121,11 +121,11 @@ export default function HomePage() {
                 value={quickEmail}
                 onChange={(e) => setQuickEmail(e.target.value)}
                 placeholder="Email pendaftaran"
-                className="sm:col-span-5 px-3.5 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                className="sm:col-span-5 ui-input bg-zinc-50 text-xs sm:text-sm"
               />
               <button
                 type="submit"
-                className="sm:col-span-2 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-colors cursor-pointer"
+                className="sm:col-span-2 ui-btn-primary text-xs sm:text-sm"
               >
                 <Search className="w-4 h-4" />
                 <span>Cek</span>
@@ -135,7 +135,7 @@ export default function HomePage() {
         </div>
 
         {/* Right Side: Structured Process Steps */}
-        <aside className="lg:col-span-5 rounded-2xl border border-zinc-200 bg-zinc-900 text-white p-7 sm:p-8 flex flex-col justify-between shadow-sm">
+        <aside className="lg:col-span-5 ui-card-dark p-5 sm:p-8 flex flex-col justify-between">
           <div className="space-y-1">
             <p className="text-[11px] font-mono uppercase tracking-widest text-emerald-400">
               Panduan Pendaftaran
@@ -196,7 +196,7 @@ export default function HomePage() {
       </section>
 
       {/* Filter & Search Bar */}
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+      <section className="ui-mobile-pad flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-5">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 tracking-tight">
             Daftar Program Terbuka
@@ -214,20 +214,18 @@ export default function HomePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari program atau kata kunci..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              className="ui-input pl-9"
             />
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex items-center sm:flex-wrap gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  'px-3 py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer',
-                  selectedCategory === cat
-                    ? 'bg-zinc-900 text-white border-zinc-900'
-                    : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                  'shrink-0 whitespace-nowrap',
+                  selectedCategory === cat ? 'ui-chip-active' : 'ui-chip'
                 )}
               >
                 {cat === 'ALL' ? 'Semua' : cat}
@@ -244,7 +242,7 @@ export default function HomePage() {
           <p className="text-sm">Memuat daftar program seleksi...</p>
         </div>
       ) : filteredForms.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center space-y-3">
+        <div className="ui-card-dashed p-10 sm:p-12 text-center space-y-3">
           <FileText className="w-10 h-10 text-zinc-400 mx-auto" />
           <h3 className="text-lg font-bold text-zinc-800">
             Belum ada program seleksi yang tersedia
@@ -254,17 +252,14 @@ export default function HomePage() {
             halaman Panel Panitia.
           </p>
           <div className="pt-2">
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
-            >
+            <Link href="/admin" className="ui-btn-primary">
               <span>Buka Panel Panitia</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
           {filteredForms.map((form) => {
             const statusMeta = FORM_STATUS_META[form.status] || FORM_STATUS_META.OPEN;
             const fileCount = form.fields.filter((f) => f.type === 'file').length;
@@ -279,7 +274,7 @@ export default function HomePage() {
             return (
               <article
                 key={form.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-6 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all"
+                className="ui-card p-5 sm:p-6 flex flex-col justify-between sm:hover:border-zinc-400 transition-all"
               >
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between gap-2">
@@ -369,10 +364,10 @@ export default function HomePage() {
                   <Link
                     href={`/seleksi/${form.slug}`}
                     className={cn(
-                      'w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors',
+                      'w-full',
                       canApply
-                        ? 'bg-zinc-900 text-white hover:bg-emerald-700'
-                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                        ? 'ui-btn-primary'
+                        : 'ui-btn-secondary bg-zinc-100 border-transparent text-zinc-600 hover:bg-zinc-200'
                     )}
                   >
                     {canApply ? (

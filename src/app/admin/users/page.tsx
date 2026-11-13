@@ -98,21 +98,20 @@ function AdminUsersContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
-          Manajemen Akun Panitia (Database Terpisah)
+    <div className="space-y-5 sm:space-y-6">
+      <div className="ui-mobile-pad">
+        <h1 className="ui-section-title">
+          Manajemen Akun Panitia
         </h1>
         <p className="text-xs text-zinc-500">
-          Daftar akun pengelola yang tersimpan khusus di database Firestore{' '}
-          <code className="font-mono text-zinc-700">pendaftaran-seleksi</code>.
+          Daftar akun pengelola yang memiliki akses verifikasi berkas dan pengelolaan formulir seleksi.
         </p>
       </div>
 
       {/* Add Admin Form */}
       <form
         onSubmit={handleAddUser}
-        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4"
+        className="ui-card p-5 sm:p-6 space-y-4"
       >
         <div className="flex items-center gap-2 text-sm font-bold text-zinc-900">
           <UserPlus className="w-4 h-4" />
@@ -126,7 +125,7 @@ function AdminUsersContent() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Nama Lengkap"
-            className="px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+            className="ui-input"
           />
           <input
             type="email"
@@ -134,12 +133,12 @@ function AdminUsersContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@panitia.id"
-            className="px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+            className="ui-input"
           />
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm bg-white"
+            className="ui-input bg-white"
           >
             {ADMIN_ROLES.map((r) => (
               <option key={r} value={r}>
@@ -151,12 +150,12 @@ function AdminUsersContent() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Sandi awal (jika akun Auth baru)"
-            className="px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm"
+            placeholder="Sandi awal (jika akun baru)"
+            className="ui-input"
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[11px] text-zinc-500">
             Hanya <code className="font-mono">super_admin</code> yang dapat menambah atau
             menghapus akun panitia.
@@ -164,7 +163,7 @@ function AdminUsersContent() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 cursor-pointer"
+            className="ui-btn-primary text-xs sm:text-sm"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>Simpan Panitia</span>
@@ -173,14 +172,14 @@ function AdminUsersContent() {
       </form>
 
       {/* Admin List */}
-      <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
+      <div className="ui-card overflow-hidden">
         {loading ? (
           <div className="py-12 flex justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-zinc-800" />
           </div>
         ) : users.length === 0 ? (
           <div className="p-8 text-center text-sm text-zinc-500">
-            Belum ada data akun panitia di database ini.
+            Belum ada data akun panitia yang terdaftar.
           </div>
         ) : (
           <div className="divide-y divide-zinc-100">

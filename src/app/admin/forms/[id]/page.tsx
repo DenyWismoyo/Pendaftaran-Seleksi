@@ -32,20 +32,20 @@ function EditFormContent() {
   if (loading) {
     return (
       <div className="py-20 flex justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
+        <Loader2 className="w-7 h-7 animate-spin text-zinc-900" />
       </div>
     );
   }
 
   if (!form) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-3">
-        <p className="text-sm font-semibold text-slate-700">
+      <div className="ui-card p-10 text-center space-y-3">
+        <p className="text-sm font-semibold text-zinc-700">
           Formulir tidak ditemukan.
         </p>
         <Link
           href="/admin"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:underline"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Kembali</span>
@@ -56,15 +56,15 @@ function EditFormContent() {
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="ui-mobile-pad">
         <Link
           href="/admin"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 mb-1"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 mb-1"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Kembali ke Daftar Formulir</span>
         </Link>
-        <h1 className="text-xl font-bold text-slate-900">
+        <h1 className="ui-section-title">
           Edit Formulir: {form.title}
         </h1>
       </div>

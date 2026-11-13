@@ -57,8 +57,8 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm space-y-6">
+    <div className="ui-shell-narrow max-w-md py-6 sm:py-16">
+      <div className="ui-card p-6 sm:p-7 space-y-6">
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-xl bg-zinc-900 text-white flex items-center justify-center mx-auto">
             <LockKeyhole className="w-5 h-5" />
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
             Masuk Meja Kerja Panitia
           </h1>
           <p className="text-xs text-zinc-500">
-            Gunakan akun Firebase Administrator yang terdaftar pada sistem.
+            Gunakan akun Panitia resmi yang terdaftar pada portal seleksi.
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@domain.id"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              className="ui-input"
             />
           </div>
 
@@ -96,14 +96,14 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              className="ui-input"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 cursor-pointer transition-colors"
+            className="w-full ui-btn-primary"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -96,9 +96,9 @@ export default function AdminGuard({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-3.5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-1.5">
+    <div className="ui-shell-admin space-y-5 sm:space-y-6">
+      <div className="ui-card-compact px-4 sm:px-5 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active =
@@ -112,7 +112,7 @@ export default function AdminGuard({
                 key={t.href}
                 href={t.href}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors',
+                  'inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0',
                   active
                     ? 'bg-zinc-900 text-white'
                     : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
@@ -125,9 +125,11 @@ export default function AdminGuard({
           })}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs font-semibold text-zinc-800">{admin.email}</p>
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 border-t border-zinc-100 sm:pt-0 sm:border-t-0">
+          <div className="sm:text-right">
+            <p className="text-xs font-semibold text-zinc-800 truncate max-w-[200px]">
+              {admin.email}
+            </p>
             <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 font-semibold">
               {admin.role}
             </p>
@@ -137,7 +139,7 @@ export default function AdminGuard({
               await signOut(auth);
               router.replace('/admin/login');
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 cursor-pointer"
+            className="ui-btn-secondary px-3 py-2 text-xs hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 shrink-0"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Keluar</span>

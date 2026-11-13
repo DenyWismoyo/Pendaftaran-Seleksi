@@ -36,9 +36,9 @@ export default function RegistrationCard({
 
   return (
     <div className="space-y-4">
-      <div className="print-only-card rounded-2xl border border-zinc-300 bg-white overflow-hidden shadow-sm">
+      <div className="print-only-card ui-card sm:border-zinc-300 overflow-hidden">
         {/* Card Header Strip */}
-        <div className="bg-zinc-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-zinc-900 text-white px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-400">
               Kartu Bukti Pendaftaran Seleksi
@@ -117,11 +117,11 @@ export default function RegistrationCard({
         </div>
       </div>
 
-      <div className="no-print flex flex-wrap justify-end gap-2">
+      <div className="no-print ui-mobile-pad flex flex-wrap justify-end gap-2">
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-300 bg-white text-zinc-800 text-xs sm:text-sm font-semibold hover:bg-zinc-50 cursor-pointer"
+          className="ui-btn-secondary border-zinc-300 text-xs sm:text-sm"
         >
           <Printer className="w-4 h-4" />
           <span>Cetak / Simpan PDF Kartu</span>
