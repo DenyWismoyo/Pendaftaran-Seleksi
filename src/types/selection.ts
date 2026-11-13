@@ -73,6 +73,7 @@ export const SelectionFormSchema = z.object({
   coverImage: CoverMediaSchema.nullable().optional(),
   coverAttachments: z.array(CoverAttachmentSchema).optional(),
   coverCtaLabel: z.string().optional(),
+  documentTemplateIds: z.array(z.string()).optional(),
   status: SelectionFormStatusEnum.default('OPEN'),
   quota: z.number().int().min(0).default(0),
   startDate: z.string().optional().default(''),
@@ -221,4 +222,25 @@ export interface AutofillSuggestion {
   confidence: 'high' | 'medium';
   reason: string;
 }
+
+export const DocumentTemplateInputSchema = z.object({
+  slug: z.string().min(2, 'Slug template minimal 2 karakter'),
+  title: z.string().min(3, 'Judul template minimal 3 karakter'),
+  category: z.string().min(2).default('Umum'),
+  targetFieldHint: z.string().optional().default(''),
+  description: z.string().optional().default(''),
+  fileBaseName: z.string().min(2, 'Nama file dasar wajib diisi'),
+  markdown: z.string().min(10, 'Isi template Markdown minimal 10 karakter'),
+  formIds: z.array(z.string()).optional().default([]),
+  isGlobal: z.boolean().optional().default(false),
+});
+export type DocumentTemplateInput = z.infer<typeof DocumentTemplateInputSchema>;
+
+export const DocumentTemplateRecordSchema = DocumentTemplateInputSchema.extend({
+  id: z.string().min(1),
+  createdBy: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type DocumentTemplateRecord = z.infer<typeof DocumentTemplateRecordSchema>;
 

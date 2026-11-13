@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
+  FileText,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -91,6 +92,7 @@ export default function AdminGuard({
   const tabs = [
     { href: '/admin', label: 'Daftar Formulir', icon: LayoutDashboard },
     { href: '/admin/forms/new', label: 'Buat Formulir', icon: PlusCircle },
+    { href: '/admin/templates', label: 'Bank Template', icon: FileText },
     { href: '/admin/submissions', label: 'Verifikasi Pelamar', icon: Users },
     { href: '/admin/users', label: 'Kelola Panitia', icon: UserCog },
   ];

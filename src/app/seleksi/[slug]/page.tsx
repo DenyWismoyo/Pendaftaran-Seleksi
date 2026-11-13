@@ -131,6 +131,7 @@ function SelectionFormContent() {
                 onSkipStep={w.skipToNextStep}
               />
               <WizardStepCard
+                formSlug={w.form.slug}
                 currentStep={w.currentStep}
                 wizardSteps={w.wizardSteps}
                 stepSummary={w.stepSummaries[w.currentStep]}

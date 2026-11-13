@@ -66,7 +66,11 @@ export default function SelectionHeaderCard({
           </div>
           <div>
             <Link
-              href="/template-dokumen"
+              href={
+                form.slug
+                  ? `/template-dokumen?seleksi=${encodeURIComponent(form.slug)}`
+                  : '/template-dokumen'
+              }
               target="_blank"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline"
             >

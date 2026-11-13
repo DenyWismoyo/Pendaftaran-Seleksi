@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
 import { SelectionForm, SelectionFormInputSchema } from '@/types/selection';
+import { syncFormTemplateIdsToTemplates } from '@/lib/templateStore';
 import { slugify } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
@@ -75,6 +76,9 @@ export async function POST(req: NextRequest) {
     }
 
     await db.collection(COLLECTIONS.FORMS).doc(id).set(formDoc);
+    if (Array.isArray(formDoc.documentTemplateIds)) {
+      await syncFormTemplateIdsToTemplates(id, formDoc.documentTemplateIds);
+    }
     return NextResponse.json({ success: true, data: formDoc }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Gagal membuat formulir.';

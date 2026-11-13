@@ -2,6 +2,7 @@ export const COLLECTIONS = {
   FORMS: 'selection_forms',
   SUBMISSIONS: 'selection_submissions',
   DRAFTS: 'selection_drafts',
+  TEMPLATES: 'document_templates',
   USERS: 'users',
 } as const;
 

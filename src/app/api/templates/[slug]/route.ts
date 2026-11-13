@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentTemplateBySlug } from '@/lib/documentTemplates';
+import { findDocumentTemplateBySlug } from '@/lib/templateStore';
 import { buildWordDocPayload } from '@/lib/documentConverter';
 
 export async function GET(
@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
-  const tpl = getDocumentTemplateBySlug(slug);
+  const tpl = await findDocumentTemplateBySlug(slug);
 
   if (!tpl) {
     return NextResponse.json(

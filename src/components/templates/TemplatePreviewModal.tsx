@@ -2,21 +2,21 @@
 
 import { Check, Copy, Download, FileCode2, X } from 'lucide-react';
 import { markdownToDocumentHtml } from '@/lib/documentConverter';
-import { DocumentTemplate } from '@/lib/documentTemplates';
+import { DocumentTemplateView } from '@/components/templates/TemplateCard';
 import { cn } from '@/lib/utils';
 
-interface TemplatePreviewModalProps {
-  template: DocumentTemplate | null;
+interface TemplatePreviewModalProps<T extends DocumentTemplateView = DocumentTemplateView> {
+  template: T | null;
   previewMode: 'formatted' | 'markdown';
   copiedSlug: string | null;
   onModeChange: (mode: 'formatted' | 'markdown') => void;
-  onCopyMarkdown: (tpl: DocumentTemplate) => void;
-  onDownloadWord: (tpl: DocumentTemplate) => void;
-  onDownloadMarkdown: (tpl: DocumentTemplate) => void;
+  onCopyMarkdown: (tpl: T) => void;
+  onDownloadWord: (tpl: T) => void;
+  onDownloadMarkdown: (tpl: T) => void;
   onClose: () => void;
 }
 
-export default function TemplatePreviewModal({
+export default function TemplatePreviewModal<T extends DocumentTemplateView = DocumentTemplateView>({
   template,
   previewMode,
   copiedSlug,

@@ -16,23 +16,24 @@ import { cn, formatBytes, formatDateID } from '@/lib/utils';
 import { CoverAttachment, SelectionForm, UploadedFileMeta } from '@/types/selection';
 
 interface SelectionCoverViewProps {
-  form: Pick<
-    SelectionForm,
-    | 'title'
-    | 'category'
-    | 'description'
-    | 'requirementsNote'
-    | 'status'
-    | 'quota'
-    | 'endDate'
-    | 'submissionCount'
-    | 'coverTitle'
-    | 'coverSummary'
-    | 'coverHighlights'
-    | 'coverImage'
-    | 'coverAttachments'
-    | 'coverCtaLabel'
-  >;
+  form: Partial<Pick<SelectionForm, 'slug'>> &
+    Pick<
+      SelectionForm,
+      | 'title'
+      | 'category'
+      | 'description'
+      | 'requirementsNote'
+      | 'status'
+      | 'quota'
+      | 'endDate'
+      | 'submissionCount'
+      | 'coverTitle'
+      | 'coverSummary'
+      | 'coverHighlights'
+      | 'coverImage'
+      | 'coverAttachments'
+      | 'coverCtaLabel'
+    >;
   isClosed?: boolean;
   hasDraftProgress?: boolean;
   previewOnly?: boolean;
@@ -159,7 +160,11 @@ export default function SelectionCoverView({
             {!previewOnly && (
               <div>
                 <Link
-                  href="/template-dokumen"
+                  href={
+                    form.slug
+                      ? `/template-dokumen?seleksi=${encodeURIComponent(form.slug)}`
+                      : '/template-dokumen'
+                  }
                   target="_blank"
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline"
                 >

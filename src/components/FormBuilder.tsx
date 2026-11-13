@@ -33,6 +33,7 @@ import CoverBuilderSection, {
   CoverFormState,
 } from '@/components/admin/CoverBuilderSection';
 import FileAutofillConfigCard from '@/components/admin/FileAutofillConfigCard';
+import FormTemplatesPicker from '@/components/admin/FormTemplatesPicker';
 import SelectionCoverView from '@/components/seleksi/SelectionCoverView';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -153,6 +154,9 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
   });
   const [previewTab, setPreviewTab] = useState<'cover' | 'fields'>(
     initialData && hasFormCoverContent(initialData) ? 'cover' : 'fields'
+  );
+  const [documentTemplateIds, setDocumentTemplateIds] = useState<string[]>(
+    initialData?.documentTemplateIds || []
   );
 
   const [fields, setFields] = useState<SelectionField[]>(
@@ -344,6 +348,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       requireAiPreScreening,
       enableAiAutofill,
       aiCriteria: aiCriteria.trim(),
+      documentTemplateIds,
       fields: fields.map((f) => ({
         ...f,
         label: f.label.trim() || 'Tanpa Label',
@@ -621,6 +626,12 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
             onChange={(patch) =>
               setCoverState((prev) => ({ ...prev, ...patch }))
             }
+          />
+
+          <FormTemplatesPicker
+            selectedIds={documentTemplateIds}
+            formId={initialData?.id}
+            onChange={setDocumentTemplateIds}
           />
 
           {/* Fields Editor */}

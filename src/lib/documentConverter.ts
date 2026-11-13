@@ -230,3 +230,39 @@ ${bodyHtml}
 </html>`;
 }
 
+function triggerBrowserDownload(content: string, filename: string, mimeType: string) {
+  if (typeof document === 'undefined') return;
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadTemplateAsWord(tpl: {
+  title: string;
+  fileBaseName: string;
+  markdown: string;
+}) {
+  triggerBrowserDownload(
+    '\ufeff' + buildWordDocPayload(tpl.title, tpl.markdown),
+    `${tpl.fileBaseName}.doc`,
+    'application/msword;charset=utf-8'
+  );
+}
+
+export function downloadTemplateAsMarkdown(tpl: {
+  fileBaseName: string;
+  markdown: string;
+}) {
+  triggerBrowserDownload(
+    tpl.markdown,
+    `${tpl.fileBaseName}.md`,
+    'text/markdown;charset=utf-8'
+  );
+}
+

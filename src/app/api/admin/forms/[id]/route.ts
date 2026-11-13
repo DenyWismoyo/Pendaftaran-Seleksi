@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
 import { SelectionForm, SelectionFormInputSchema } from '@/types/selection';
+import { syncFormTemplateIdsToTemplates } from '@/lib/templateStore';
 import { slugify } from '@/lib/utils';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -74,6 +75,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     }
 
     await docRef.update(updates);
+    if (Array.isArray(parsed.data.documentTemplateIds)) {
+      await syncFormTemplateIdsToTemplates(id, parsed.data.documentTemplateIds);
+    }
     const updatedSnap = await docRef.get();
     return NextResponse.json({
       success: true,

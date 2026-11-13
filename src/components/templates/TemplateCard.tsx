@@ -3,19 +3,23 @@
 import { Download, Eye, FileCode2 } from 'lucide-react';
 import { DocumentTemplate } from '@/lib/documentTemplates';
 
-interface TemplateCardProps {
-  template: DocumentTemplate;
-  onDownloadWord: (tpl: DocumentTemplate) => void;
-  onDownloadMarkdown: (tpl: DocumentTemplate) => void;
-  onPreview: (tpl: DocumentTemplate) => void;
+export type DocumentTemplateView = Omit<DocumentTemplate, 'category'> & {
+  category: string;
+};
+
+interface TemplateCardProps<T extends DocumentTemplateView = DocumentTemplateView> {
+  template: T;
+  onDownloadWord: (tpl: T) => void;
+  onDownloadMarkdown: (tpl: T) => void;
+  onPreview: (tpl: T) => void;
 }
 
-export default function TemplateCard({
+export default function TemplateCard<T extends DocumentTemplateView = DocumentTemplateView>({
   template,
   onDownloadWord,
   onDownloadMarkdown,
   onPreview,
-}: TemplateCardProps) {
+}: TemplateCardProps<T>) {
   return (
     <article className="ui-card p-5 sm:p-6 flex flex-col justify-between gap-5 sm:hover:border-zinc-300 transition-colors">
       <div className="space-y-3">

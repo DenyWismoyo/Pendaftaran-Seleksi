@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { AutofillTargetInfo, SelectionField, UploadedFileMeta } from '@/types/selection';
 
 interface WizardStepCardProps {
+  formSlug?: string;
   currentStep: number;
   wizardSteps: WizardStep[];
   stepSummary?: StepCompletionSummary;
@@ -84,6 +85,7 @@ interface WizardStepCardProps {
 }
 
 export default function WizardStepCard({
+  formSlug,
   currentStep,
   wizardSteps,
   stepSummary,
@@ -222,7 +224,11 @@ export default function WizardStepCard({
             Belum punya format surat lamaran, pakta integritas, atau daftar riwayat hidup?
           </span>
           <Link
-            href="/template-dokumen"
+            href={
+              formSlug
+                ? `/template-dokumen?seleksi=${encodeURIComponent(formSlug)}`
+                : '/template-dokumen'
+            }
             target="_blank"
             className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 hover:text-emerald-900 underline shrink-0"
           >

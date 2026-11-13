@@ -1,36 +1,72 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import TemplateCard from '@/components/templates/TemplateCard';
-import TemplateHeaderCard from '@/components/templates/TemplateHeaderCard';
+import TemplateCard, {
+  DocumentTemplateView,
+} from '@/components/templates/TemplateCard';
+import TemplateHeaderCard, {
+  ScopedFormSummary,
+} from '@/components/templates/TemplateHeaderCard';
 import TemplatePreviewModal from '@/components/templates/TemplatePreviewModal';
-import { buildWordDocPayload } from '@/lib/documentConverter';
-import { DOCUMENT_TEMPLATES, DocumentTemplate } from '@/lib/documentTemplates';
+import {
+  downloadTemplateAsMarkdown,
+  downloadTemplateAsWord,
+} from '@/lib/documentConverter';
+import { DOCUMENT_TEMPLATES } from '@/lib/documentTemplates';
 import { cn } from '@/lib/utils';
 
-const CATEGORIES = [
-  'Semua',
-  'Pejabat Teknis',
-  'Umum',
-  'Pelatihan Vokasi',
-  'Magang & PKL',
-] as const;
+function DocumentTemplatesContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const seleksiSlug = searchParams.get('seleksi')?.trim() || '';
 
-export default function DocumentTemplatesPage() {
+  const [templates, setTemplates] = useState<DocumentTemplateView[]>(DOCUMENT_TEMPLATES);
+  const [scopedForm, setScopedForm] = useState<ScopedFormSummary | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [search, setSearch] = useState('');
-  const [previewTpl, setPreviewTpl] = useState<DocumentTemplate | null>(null);
+  const [previewTpl, setPreviewTpl] = useState<DocumentTemplateView | null>(null);
   const [previewMode, setPreviewMode] = useState<'formatted' | 'markdown'>('formatted');
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        const query = seleksiSlug ? `?seleksi=${encodeURIComponent(seleksiSlug)}` : '';
+        const res = await fetch(`/api/templates${query}`);
+        const json = await res.json();
+        if (active && json?.success && Array.isArray(json.data)) {
+          setTemplates(json.data);
+          setScopedForm(json.scopedForm || null);
+          setSelectedCategory('Semua');
+        }
+      } catch {
+        // Fallback aman ke daftar default jika jaringan terganggu
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchTemplates();
+    return () => {
+      active = false;
+    };
+  }, [seleksiSlug]);
+
+  const categories = useMemo(() => {
+    const uniq = Array.from(new Set(templates.map((t) => t.category).filter(Boolean)));
+    return ['Semua', ...uniq];
+  }, [templates]);
+
   const filteredTemplates = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return DOCUMENT_TEMPLATES.filter((tpl) => {
-      const matchCat =
-        selectedCategory === 'Semua' || tpl.category === selectedCategory;
+    return templates.filter((tpl) => {
+      const matchCat = selectedCategory === 'Semua' || tpl.category === selectedCategory;
       const matchSearch =
         !q ||
         tpl.title.toLowerCase().includes(q) ||
@@ -38,39 +74,19 @@ export default function DocumentTemplatesPage() {
         tpl.targetFieldHint.toLowerCase().includes(q);
       return matchCat && matchSearch;
     });
-  }, [selectedCategory, search]);
+  }, [templates, selectedCategory, search]);
 
-  const triggerDownload = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadWord = (tpl: DocumentTemplate) => {
-    triggerDownload(
-      '\ufeff' + buildWordDocPayload(tpl.title, tpl.markdown),
-      `${tpl.fileBaseName}.doc`,
-      'application/msword;charset=utf-8'
-    );
+  const handleDownloadWord = (tpl: DocumentTemplateView) => {
+    downloadTemplateAsWord(tpl);
     toast.success(`Mengunduh "${tpl.fileBaseName}.doc" (siap dibuka di Word).`);
   };
 
-  const handleDownloadMarkdown = (tpl: DocumentTemplate) => {
-    triggerDownload(
-      tpl.markdown,
-      `${tpl.fileBaseName}.md`,
-      'text/markdown;charset=utf-8'
-    );
+  const handleDownloadMarkdown = (tpl: DocumentTemplateView) => {
+    downloadTemplateAsMarkdown(tpl);
     toast.success(`Mengunduh "${tpl.fileBaseName}.md".`);
   };
 
-  const handleCopyMarkdown = async (tpl: DocumentTemplate) => {
+  const handleCopyMarkdown = async (tpl: DocumentTemplateView) => {
     try {
       await navigator.clipboard.writeText(tpl.markdown);
       setCopiedSlug(tpl.slug);
@@ -84,28 +100,25 @@ export default function DocumentTemplatesPage() {
   return (
     <div className="ui-shell space-y-5 sm:space-y-6">
       <div className="ui-mobile-pad">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900"
-        >
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900">
           <ArrowLeft className="w-4 h-4" />
           <span>Kembali ke Daftar Program Seleksi</span>
         </Link>
       </div>
 
-      <TemplateHeaderCard />
+      <TemplateHeaderCard
+        scopedForm={scopedForm}
+        onShowAll={scopedForm ? () => router.push('/template-dokumen') : undefined}
+      />
 
       <div className="ui-mobile-pad flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center sm:flex-wrap gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:pb-0">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={cn(
-                'shrink-0 whitespace-nowrap',
-                selectedCategory === cat ? 'ui-chip-active' : 'ui-chip'
-              )}
+              className={cn('shrink-0 whitespace-nowrap', selectedCategory === cat ? 'ui-chip-active' : 'ui-chip')}
             >
               {cat}
             </button>
@@ -124,9 +137,14 @@ export default function DocumentTemplatesPage() {
         </div>
       </div>
 
-      {filteredTemplates.length === 0 ? (
+      {loading ? (
+        <div className="ui-card p-10 flex items-center justify-center gap-2 text-sm text-zinc-500">
+          <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
+          <span>Menyiapkan template dokumen seleksi...</span>
+        </div>
+      ) : filteredTemplates.length === 0 ? (
         <div className="ui-card-dashed p-10 sm:p-12 text-center text-sm text-zinc-500">
-          Tidak ada template dokumen yang cocok dengan pencarian Anda.
+          Tidak ada template dokumen yang cocok dengan filter atau pencarian Anda.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
@@ -156,5 +174,20 @@ export default function DocumentTemplatesPage() {
         onClose={() => setPreviewTpl(null)}
       />
     </div>
+  );
+}
+
+export default function DocumentTemplatesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="ui-shell py-12 flex items-center justify-center gap-2 text-sm text-zinc-500">
+          <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
+          <span>Memuat bank template...</span>
+        </div>
+      }
+    >
+      <DocumentTemplatesContent />
+    </Suspense>
   );
 }
