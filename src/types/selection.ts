@@ -113,6 +113,7 @@ export type SelectionSubmission = z.infer<typeof SelectionSubmissionSchema>;
 
 export const CreateSubmissionPayloadSchema = z.object({
   formId: z.string().min(1),
+  draftToken: z.string().optional(),
   applicantName: z.string().min(2, 'Nama lengkap minimal 2 karakter'),
   applicantEmail: z.string().email('Format email tidak valid'),
   applicantPhone: z.string().min(8, 'Nomor WhatsApp/HP minimal 8 digit'),
@@ -120,4 +121,26 @@ export const CreateSubmissionPayloadSchema = z.object({
   files: z.array(UploadedFileMetaSchema).default([]),
 });
 export type CreateSubmissionPayload = z.infer<typeof CreateSubmissionPayloadSchema>;
+
+export const SelectionDraftPayloadSchema = z.object({
+  draftToken: z.string().optional(),
+  formId: z.string().min(1),
+  formSlug: z.string().min(1),
+  applicantName: z.string().optional().default(''),
+  applicantEmail: z.string().optional().default(''),
+  applicantPhone: z.string().optional().default(''),
+  answers: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]))
+    .default({}),
+  files: z.array(UploadedFileMetaSchema).default([]),
+  currentStep: z.number().int().min(0).optional().default(0),
+});
+export type SelectionDraftPayload = z.infer<typeof SelectionDraftPayloadSchema>;
+
+export interface SelectionDraft extends SelectionDraftPayload {
+  draftToken: string;
+  status: 'IN_PROGRESS' | 'SUBMITTED';
+  createdAt: string;
+  updatedAt: string;
+}
 

@@ -1,6 +1,7 @@
 export const COLLECTIONS = {
   FORMS: 'selection_forms',
   SUBMISSIONS: 'selection_submissions',
+  DRAFTS: 'selection_drafts',
   USERS: 'users',
 } as const;
 

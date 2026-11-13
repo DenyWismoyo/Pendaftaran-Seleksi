@@ -46,7 +46,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Kembalikan ringkasan status yang aman untuk publik
     return NextResponse.json({
       success: true,
       data: {
@@ -87,6 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = parsed.data;
+    const normalizedEmail = payload.applicantEmail.trim().toLowerCase();
     const db = getAdminDb();
     const formRef = db.collection(COLLECTIONS.FORMS).doc(payload.formId);
     const formSnap = await formRef.get();
@@ -113,6 +113,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Cegah duplikasi pendaftaran dengan email yang sama pada form yang sama
+    const duplicateSnap = await db
+      .collection(COLLECTIONS.SUBMISSIONS)
+      .where('formId', '==', form.id)
+      .where('applicantEmail', '==', normalizedEmail)
+      .limit(1)
+      .get();
+
+    if (!duplicateSnap.empty) {
+      const existingSub = duplicateSnap.docs[0].data() as SelectionSubmission;
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Email ${normalizedEmail} sudah terdaftar pada program ini dengan kode ${existingSub.registrationCode}.`,
+          existingRegistrationCode: existingSub.registrationCode,
+        },
+        { status: 409 }
+      );
+    }
+
     const dynamicValidation = validateDynamicSubmission(
       form.fields,
       payload.answers,
@@ -126,18 +146,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Opsional: AI Pre-screening oleh Clario AI jika diaktifkan & CLARIO_API_KEY tersedia
     let aiEvaluation = undefined;
     if (form.requireAiPreScreening && process.env.CLARIO_API_KEY) {
       try {
         aiEvaluation = await evaluateSubmissionWithAi(form, {
           applicantName: payload.applicantName,
-          applicantEmail: payload.applicantEmail,
+          applicantEmail: normalizedEmail,
           answers: payload.answers,
           files: payload.files,
         });
       } catch {
-        // Jangan gagalkan pendaftaran user apabila AI sedang tidak tersedia
         aiEvaluation = undefined;
       }
     }
@@ -153,7 +171,7 @@ export async function POST(req: NextRequest) {
       formTitle: form.title,
       formSlug: form.slug,
       applicantName: payload.applicantName.trim(),
-      applicantEmail: payload.applicantEmail.trim().toLowerCase(),
+      applicantEmail: normalizedEmail,
       applicantPhone: payload.applicantPhone.trim(),
       answers: payload.answers,
       files: payload.files,
@@ -172,6 +190,20 @@ export async function POST(req: NextRequest) {
       submissionCount: FieldValue.increment(1),
       updatedAt: now,
     });
+    if (payload.draftToken) {
+      const draftRef = db
+        .collection(COLLECTIONS.DRAFTS)
+        .doc(payload.draftToken.trim().toUpperCase());
+      batch.set(
+        draftRef,
+        {
+          status: 'SUBMITTED',
+          submittedRegistrationCode: registrationCode,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+    }
     await batch.commit();
 
     return NextResponse.json({
@@ -190,4 +222,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
-

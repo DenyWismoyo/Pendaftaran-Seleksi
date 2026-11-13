@@ -3,6 +3,7 @@ import { getDownloadURL } from 'firebase-admin/storage';
 import { getAdminBucket, getAdminDb } from '@/lib/firebaseAdmin';
 import { COLLECTIONS } from '@/lib/constants';
 import { SelectionForm } from '@/types/selection';
+import { generateDraftToken } from '@/lib/utils';
 
 const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null;
     const formId = String(formData.get('formId') || '').trim();
     const fieldId = String(formData.get('fieldId') || '').trim();
+    const rawDraftToken = String(formData.get('draftToken') || '').trim().toUpperCase();
+    const draftToken = rawDraftToken || generateDraftToken();
 
     if (!file || !formId || !fieldId) {
       return NextResponse.json(
@@ -28,7 +31,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Pastikan formulir ada dan masih OPEN
     const formSnap = await getAdminDb().collection(COLLECTIONS.FORMS).doc(formId).get();
     if (!formSnap.exists) {
       return NextResponse.json(
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
     }
 
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `selection_uploads/${formId}/${fieldId}/${Date.now()}-${safeFileName}`;
+    const storagePath = `selection_uploads/${formId}/tmp/${draftToken}/${fieldId}/${Date.now()}-${safeFileName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const bucket = getAdminBucket();
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           formId,
           fieldId,
+          draftToken,
           originalName: file.name,
         },
       },
@@ -111,3 +114,38 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const storagePath = String(body.storagePath || '').trim();
+    const formId = String(body.formId || '').trim();
+    const draftToken = String(body.draftToken || '').trim().toUpperCase();
+
+    if (!storagePath || !formId || !draftToken) {
+      return NextResponse.json(
+        { success: false, error: 'Parameter hapus berkas sementara tidak lengkap.' },
+        { status: 400 }
+      );
+    }
+
+    // Pastikan hanya berkas sementara milik draftToken ini yang boleh dihapus
+    const expectedPrefix = `selection_uploads/${formId}/tmp/${draftToken}/`;
+    if (!storagePath.startsWith(expectedPrefix)) {
+      return NextResponse.json(
+        { success: false, error: 'Tidak diizinkan menghapus berkas ini.' },
+        { status: 403 }
+      );
+    }
+
+    await getAdminBucket().file(storagePath).delete({ ignoreNotFound: true });
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : 'Gagal menghapus berkas sementara.',
+      },
+      { status: 500 }
+    );
+  }
+}
