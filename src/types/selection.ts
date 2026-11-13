@@ -244,3 +244,47 @@ export const DocumentTemplateRecordSchema = DocumentTemplateInputSchema.extend({
 });
 export type DocumentTemplateRecord = z.infer<typeof DocumentTemplateRecordSchema>;
 
+export const DriveAuthModeSchema = z.enum(['oauth', 'service_account']);
+export type DriveAuthMode = z.infer<typeof DriveAuthModeSchema>;
+
+export const DriveExportFormatSchema = z.enum(['md', 'doc', 'both']);
+export type DriveExportFormat = z.infer<typeof DriveExportFormatSchema>;
+
+export const DriveSettingsSchema = z.object({
+  folderInput: z.string().optional().default(''),
+  folderId: z.string().optional().default(''),
+  folderName: z.string().optional().default(''),
+  authMode: DriveAuthModeSchema.optional().default('oauth'),
+  format: DriveExportFormatSchema.optional().default('both'),
+  includeFiles: z.boolean().optional().default(true),
+  createBatchSubfolder: z.boolean().optional().default(false),
+  batchFolderPrefix: z.string().optional().default('Batch Kandidat'),
+});
+export type DriveSettings = z.infer<typeof DriveSettingsSchema>;
+
+export const DriveVerifyRequestSchema = z.object({
+  folderInput: z.string().optional().default(''),
+  authMode: DriveAuthModeSchema.default('oauth'),
+  driveAccessToken: z.string().optional(),
+});
+
+export const DrivePrepareRequestSchema = z.object({
+  folderInput: z.string().optional().default(''),
+  authMode: DriveAuthModeSchema.default('oauth'),
+  driveAccessToken: z.string().optional(),
+  createBatchSubfolder: z.boolean().default(false),
+  batchFolderName: z.string().optional().default(''),
+  format: DriveExportFormatSchema.default('both'),
+  submissionIds: z.array(z.string().min(1)).min(1, 'Minimal 1 peserta dipilih untuk diekspor'),
+});
+
+export const DriveExportCandidateRequestSchema = z.object({
+  submissionId: z.string().min(1, 'ID peserta wajib diisi'),
+  parentFolderId: z.string().min(1, 'Folder target Drive wajib diisi'),
+  authMode: DriveAuthModeSchema.default('oauth'),
+  driveAccessToken: z.string().optional(),
+  format: DriveExportFormatSchema.default('both'),
+  includeFiles: z.boolean().default(true),
+});
+
+

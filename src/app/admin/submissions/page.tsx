@@ -1,11 +1,12 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminGuard from '@/components/AdminGuard';
 import FilePreviewModal from '@/components/FilePreviewModal';
+import GoogleDriveExportModal from '@/components/admin/GoogleDriveExportModal';
 import SubmissionDetailPanel from '@/components/admin/SubmissionDetailPanel';
 import SubmissionListCard from '@/components/admin/SubmissionListCard';
 import SubmissionPipelineTabs from '@/components/admin/SubmissionPipelineTabs';
@@ -16,6 +17,12 @@ import { downloadSubmissionsCsv } from '@/lib/submissionExport';
 function SubmissionsContent() {
   const searchParams = useSearchParams();
   const s = useAdminSubmissions(searchParams.get('formId') || '');
+  const [driveModalOpen, setDriveModalOpen] = useState(false);
+
+  const selectedSubmissions = useMemo(() => {
+    const idSet = new Set(s.selectedIds);
+    return s.filteredSubmissions.filter((item) => idSet.has(item.id));
+  }, [s.filteredSubmissions, s.selectedIds]);
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -36,6 +43,13 @@ function SubmissionsContent() {
         onFormChange={s.changeFormFilter}
         onBulkStatusChange={s.setBulkStatus}
         onBulkUpdate={s.handleBulkUpdate}
+        onExportDrive={() => {
+          if (s.filteredSubmissions.length === 0) {
+            toast.error('Tidak ada data kandidat untuk diekspor ke Google Drive.');
+            return;
+          }
+          setDriveModalOpen(true);
+        }}
         onExportCsv={() => {
           if (s.filteredSubmissions.length === 0) {
             toast.error('Tidak ada data pendaftar untuk diekspor.');
@@ -95,6 +109,14 @@ function SubmissionsContent() {
       <FilePreviewModal
         file={s.previewFile}
         onClose={() => s.setPreviewFile(null)}
+      />
+
+      <GoogleDriveExportModal
+        open={driveModalOpen}
+        onClose={() => setDriveModalOpen(false)}
+        selectedSubmissions={selectedSubmissions}
+        filteredSubmissions={s.filteredSubmissions}
+        currentFormTitle={s.selectedFormFilterDef?.title}
       />
     </div>
   );

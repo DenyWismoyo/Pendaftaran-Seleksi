@@ -11,6 +11,7 @@ export const COLLECTIONS = {
   SUBMISSIONS: 'selection_submissions',
   DRAFTS: 'selection_drafts',
   TEMPLATES: 'document_templates',
+  SETTINGS: 'app_settings',
   USERS: 'users',
 } as const;
 

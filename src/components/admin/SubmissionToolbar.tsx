@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckSquare, Download, Search } from 'lucide-react';
+import { CheckSquare, Download, HardDrive, Search } from 'lucide-react';
 import { SelectionForm, SubmissionStatus } from '@/types/selection';
 
 interface SubmissionToolbarProps {
@@ -15,6 +15,7 @@ interface SubmissionToolbarProps {
   onBulkStatusChange: (status: SubmissionStatus) => void;
   onBulkUpdate: () => void;
   onExportCsv: () => void;
+  onExportDrive: () => void;
 }
 
 export default function SubmissionToolbar({
@@ -29,6 +30,7 @@ export default function SubmissionToolbar({
   onBulkStatusChange,
   onBulkUpdate,
   onExportCsv,
+  onExportDrive,
 }: SubmissionToolbarProps) {
   return (
     <div className="ui-card-compact p-4 flex flex-wrap items-center gap-3 justify-between">
@@ -88,6 +90,15 @@ export default function SubmissionToolbar({
             </button>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={onExportDrive}
+          className="ui-btn-primary px-3.5 py-2 text-xs"
+        >
+          <HardDrive className="w-4 h-4" />
+          <span>Export ke Drive</span>
+        </button>
 
         <button
           type="button"
