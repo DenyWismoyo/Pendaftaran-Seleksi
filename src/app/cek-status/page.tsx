@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import RegistrationCard from '@/components/RegistrationCard';
 import StatusLookupForm from '@/components/status/StatusLookupForm';
 import StatusProgressCard from '@/components/status/StatusProgressCard';
-import { SubmissionStatus } from '@/types/selection';
+import { SelectionStage, SubmissionStatus } from '@/types/selection';
 
 interface TrackingResult {
   id: string;
@@ -17,6 +17,8 @@ interface TrackingResult {
   applicantName: string;
   applicantEmail: string;
   status: SubmissionStatus;
+  currentStageId?: string;
+  formStages?: SelectionStage[];
   reviewerNote: string;
   revisionFields?: string[];
   interviewSchedule?: string;
@@ -104,6 +106,8 @@ function CekStatusContent() {
             registrationCode={result.registrationCode}
             applicantEmail={result.applicantEmail}
             status={result.status}
+            currentStageId={result.currentStageId}
+            formStages={result.formStages}
             reviewerNote={result.reviewerNote}
             revisionFields={result.revisionFields}
             interviewSchedule={result.interviewSchedule}

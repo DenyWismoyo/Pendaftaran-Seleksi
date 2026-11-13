@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   FileText,
+  KeyRound,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -94,6 +95,7 @@ export default function AdminGuard({
     { href: '/admin/forms/new', label: 'Buat Formulir', icon: PlusCircle },
     { href: '/admin/templates', label: 'Bank Template', icon: FileText },
     { href: '/admin/submissions', label: 'Verifikasi Pelamar', icon: Users },
+    { href: '/admin/panitia', label: 'Panitia & Kode', icon: KeyRound },
     { href: '/admin/users', label: 'Kelola Tim', icon: UserCog },
   ];
 

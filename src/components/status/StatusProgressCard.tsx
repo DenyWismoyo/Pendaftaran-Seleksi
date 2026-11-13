@@ -3,7 +3,7 @@
 import { CalendarClock, FileCheck2 } from 'lucide-react';
 import RevisionUploadPanel from '@/components/status/RevisionUploadPanel';
 import StatusMilestoneTimeline from '@/components/status/StatusMilestoneTimeline';
-import { SubmissionStatus } from '@/types/selection';
+import { SelectionStage, SubmissionStatus } from '@/types/selection';
 import { formatBytes } from '@/lib/utils';
 
 interface StatusProgressCardProps {
@@ -11,6 +11,8 @@ interface StatusProgressCardProps {
   registrationCode: string;
   applicantEmail: string;
   status: SubmissionStatus;
+  currentStageId?: string;
+  formStages?: SelectionStage[];
   reviewerNote?: string;
   revisionFields?: string[];
   interviewSchedule?: string;
@@ -23,6 +25,8 @@ export default function StatusProgressCard({
   registrationCode,
   applicantEmail,
   status,
+  currentStageId,
+  formStages,
   reviewerNote,
   revisionFields = [],
   interviewSchedule,
@@ -33,7 +37,11 @@ export default function StatusProgressCard({
     <section className="no-print ui-card p-5 sm:p-6 space-y-5">
       <h2 className="ui-eyebrow">Progres Tahapan Seleksi</h2>
 
-      <StatusMilestoneTimeline status={status} />
+      <StatusMilestoneTimeline
+        status={status}
+        formStages={formStages}
+        currentStageId={currentStageId}
+      />
 
       {status === 'INTERVIEW' && interviewSchedule && (
         <div className="ui-callout-emerald flex items-start gap-2.5">

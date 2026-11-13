@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { adminFetch } from '@/lib/adminClient';
+import { resolveFormStages } from '@/lib/selectionStages';
 import {
   AiEvaluation,
   PanelScore,
@@ -27,6 +28,7 @@ export function useAdminSubmissions(initialFormId: string) {
   const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const [reviewStatus, setReviewStatus] = useState<SubmissionStatus>('SUBMITTED');
+  const [currentStageId, setCurrentStageId] = useState('');
   const [reviewerNote, setReviewerNote] = useState('');
   const [revisionFields, setRevisionFields] = useState<string[]>([]);
   const [interviewSchedule, setInterviewSchedule] = useState('');
@@ -37,6 +39,7 @@ export function useAdminSubmissions(initialFormId: string) {
 
   const syncReviewInputs = (item: SelectionSubmission) => {
     setReviewStatus(item.status);
+    setCurrentStageId(item.currentStageId || '');
     setReviewerNote(item.reviewerNote || '');
     setRevisionFields(item.revisionFields || []);
     setInterviewSchedule(item.interviewSchedule || '');
@@ -162,11 +165,17 @@ export function useAdminSubmissions(initialFormId: string) {
     if (!selectedSub) return;
     setSavingReview(true);
     try {
+      const activeForm = forms.find((f) => f.id === selectedSub.formId);
+      const stages = resolveFormStages(activeForm);
+      const pickedStage = stages.find((st) => st.id === currentStageId);
+
       const res = await adminFetch<SelectionSubmission>('/api/admin/submissions', {
         method: 'PATCH',
         body: JSON.stringify({
           id: selectedSub.id,
           status: reviewStatus,
+          currentStageId: currentStageId || undefined,
+          currentStageName: pickedStage?.name || undefined,
           reviewerNote,
           revisionFields: reviewStatus === 'NEEDS_REVISION' ? revisionFields : [],
           interviewSchedule: reviewStatus === 'INTERVIEW' ? interviewSchedule : '',
@@ -265,6 +274,8 @@ export function useAdminSubmissions(initialFormId: string) {
     bulkUpdating,
     reviewStatus,
     setReviewStatus,
+    currentStageId,
+    setCurrentStageId,
     reviewerNote,
     setReviewerNote,
     revisionFields,

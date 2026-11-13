@@ -1,5 +1,6 @@
 import { BRAND, SUBMISSION_STATUS_META } from '@/lib/constants';
 import { buildWordDocPayload } from '@/lib/documentConverter';
+import { resolveFormStages } from '@/lib/selectionStages';
 import { formatBytes, formatDateID } from '@/lib/utils';
 import {
   SelectionField,
@@ -77,6 +78,13 @@ export function buildCandidateDossierMarkdown(
     `| Pembaruan Terakhir | ${escapeMdCell(formatDateID(submission.updatedAt))} |`,
   ];
 
+  if (submission.currentStageId) {
+    const stages = resolveFormStages(formDef);
+    const activeStage = stages.find((st) => st.id === submission.currentStageId);
+    lines.push(
+      `| Tahapan Seleksi Aktif | ${escapeMdCell(activeStage?.name || submission.currentStageId)} |`
+    );
+  }
   if (submission.interviewSchedule) {
     lines.push(
       `| Jadwal Wawancara / Tahap Lanjut | ${escapeMdCell(submission.interviewSchedule)} |`
@@ -180,6 +188,21 @@ export function buildCandidateDossierMarkdown(
     for (const ps of submission.panelScores) {
       lines.push(
         `| ${escapeMdCell(ps.evaluatorName || ps.evaluatorEmail)} | ${ps.adminScore} | ${ps.trackRecordScore} | ${ps.conceptScore} | ${ps.interviewScore} | **${ps.totalScore}** | ${escapeMdCell(ps.note || '-')} |`
+      );
+    }
+    lines.push('');
+  }
+
+  if (submission.stageEvaluations && submission.stageEvaluations.length > 0) {
+    lines.push(
+      '### Rincian Evaluasi Panitia Per Tahapan',
+      '',
+      '| Tahapan | Penilai | Peran | Skor Terbobot | Rekomendasi | Catatan |',
+      '| :--- | :--- | :--- | :---: | :---: | :--- |'
+    );
+    for (const ev of submission.stageEvaluations) {
+      lines.push(
+        `| ${escapeMdCell(ev.stageName || ev.stageId)} | ${escapeMdCell(ev.evaluatorName)} | ${escapeMdCell(ev.roleTitle || '-')} | **${ev.totalScore}** | ${escapeMdCell(ev.recommendation)} | ${escapeMdCell(ev.note || '-')} |`
       );
     }
     lines.push('');

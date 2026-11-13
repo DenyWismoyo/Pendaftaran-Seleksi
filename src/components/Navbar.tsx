@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileCheck, FileDown, Search, Settings2 } from 'lucide-react';
+import { ClipboardCheck, FileCheck, FileDown, Search, Settings2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import { BRAND } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ export default function Navbar() {
     { href: '/', label: 'Program Seleksi', icon: FileCheck },
     { href: '/template-dokumen', label: 'Template Dokumen', icon: FileDown },
     { href: '/cek-status', label: 'Lacak Pendaftaran', icon: Search },
+    { href: '/penilaian', label: 'Portal Penilai', icon: ClipboardCheck },
   ];
 
   const isAdmin = pathname.startsWith('/admin');

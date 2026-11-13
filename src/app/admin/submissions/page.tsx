@@ -88,6 +88,7 @@ function SubmissionsContent() {
               formDef={s.currentFormDef}
               evaluatingAi={s.evaluatingAi}
               reviewStatus={s.reviewStatus}
+              currentStageId={s.currentStageId}
               reviewerNote={s.reviewerNote}
               revisionFields={s.revisionFields}
               interviewSchedule={s.interviewSchedule}
@@ -96,6 +97,7 @@ function SubmissionsContent() {
               onEvaluateAi={s.handleEvaluateAi}
               onPreviewFile={s.setPreviewFile}
               onReviewStatusChange={s.setReviewStatus}
+              onCurrentStageChange={s.setCurrentStageId}
               onReviewerNoteChange={s.setReviewerNote}
               onToggleRevisionField={s.toggleRevisionField}
               onInterviewScheduleChange={s.setInterviewSchedule}

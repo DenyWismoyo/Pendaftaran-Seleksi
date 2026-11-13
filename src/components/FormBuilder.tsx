@@ -20,6 +20,8 @@ import {
   SelectionForm,
   SelectionFormInput,
   SelectionFormStatus,
+  SelectionStage,
+  StageCriterion,
 } from '@/types/selection';
 import { SELECTION_CATEGORIES } from '@/lib/constants';
 import {
@@ -27,6 +29,12 @@ import {
   suggestAutofillTargetsForFileField,
 } from '@/lib/autofillMapper';
 import { hasFormCoverContent } from '@/lib/formCover';
+import {
+  DEFAULT_SCORING_CRITERIA,
+  resolveFormStages,
+  resolveStageCriteria,
+  STAGE_PRESETS,
+} from '@/lib/selectionStages';
 import { adminFetch } from '@/lib/adminClient';
 import { cn, slugify } from '@/lib/utils';
 import CoverBuilderSection, {
@@ -34,6 +42,7 @@ import CoverBuilderSection, {
 } from '@/components/admin/CoverBuilderSection';
 import FileAutofillConfigCard from '@/components/admin/FileAutofillConfigCard';
 import FormTemplatesPicker from '@/components/admin/FormTemplatesPicker';
+import StagesBuilderSection from '@/components/admin/StagesBuilderSection';
 import SelectionCoverView from '@/components/seleksi/SelectionCoverView';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -157,6 +166,12 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
   );
   const [documentTemplateIds, setDocumentTemplateIds] = useState<string[]>(
     initialData?.documentTemplateIds || []
+  );
+  const [selectionStages, setSelectionStages] = useState<SelectionStage[]>(() =>
+    initialData ? resolveFormStages(initialData) : STAGE_PRESETS.jabatan.stages
+  );
+  const [scoringCriteria, setScoringCriteria] = useState<StageCriterion[]>(() =>
+    initialData ? resolveStageCriteria(initialData) : DEFAULT_SCORING_CRITERIA
   );
 
   const [fields, setFields] = useState<SelectionField[]>(
@@ -349,6 +364,8 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       enableAiAutofill,
       aiCriteria: aiCriteria.trim(),
       documentTemplateIds,
+      selectionStages,
+      scoringCriteria,
       fields: fields.map((f) => ({
         ...f,
         label: f.label.trim() || 'Tanpa Label',
@@ -632,6 +649,13 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
             selectedIds={documentTemplateIds}
             formId={initialData?.id}
             onChange={setDocumentTemplateIds}
+          />
+
+          <StagesBuilderSection
+            stages={selectionStages}
+            scoringCriteria={scoringCriteria}
+            onChangeStages={setSelectionStages}
+            onChangeCriteria={setScoringCriteria}
           />
 
           {/* Fields Editor */}

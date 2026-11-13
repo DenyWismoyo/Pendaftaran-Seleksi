@@ -1,16 +1,96 @@
 'use client';
 
 import { AlertTriangle, Check, Clock, XCircle } from 'lucide-react';
-import { SubmissionStatus } from '@/types/selection';
+import { resolveCurrentStageIndex } from '@/lib/selectionStages';
+import { SelectionStage, SubmissionStatus } from '@/types/selection';
 import { cn } from '@/lib/utils';
 
 export default function StatusMilestoneTimeline({
   status,
+  formStages,
+  currentStageId,
 }: {
   status: SubmissionStatus;
+  formStages?: SelectionStage[];
+  currentStageId?: string;
 }) {
   const isRejected = status === 'REJECTED';
   const isRevision = status === 'NEEDS_REVISION';
+
+  if (formStages && formStages.length > 0) {
+    const activeIdx = resolveCurrentStageIndex(
+      { status, currentStageId },
+      formStages
+    );
+    const lastIdx = formStages.length - 1;
+
+    return (
+      <div
+        className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5"
+      >
+        {formStages.map((stage, idx) => {
+          const completed =
+            idx < activeIdx || (idx === lastIdx && status === 'ACCEPTED');
+          const current = idx === activeIdx && idx < lastIdx;
+          const rejectedFinal = idx === lastIdx && isRejected;
+          const revisionStep = idx === Math.min(1, lastIdx) && isRevision;
+
+          return (
+            <div
+              key={stage.id}
+              className={cn(
+                'rounded-xl border p-3 space-y-1.5',
+                rejectedFinal
+                  ? 'border-rose-200 bg-rose-50'
+                  : revisionStep
+                    ? 'border-orange-300 bg-orange-50'
+                    : completed
+                      ? 'border-emerald-200 bg-emerald-50/70'
+                      : current
+                        ? 'border-zinc-900 bg-zinc-50'
+                        : 'border-zinc-200 bg-white opacity-60'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    'w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0',
+                    rejectedFinal
+                      ? 'bg-rose-600 text-white'
+                      : revisionStep
+                        ? 'bg-orange-600 text-white'
+                        : completed
+                          ? 'bg-emerald-600 text-white'
+                          : current
+                            ? 'bg-zinc-900 text-white'
+                            : 'bg-zinc-200 text-zinc-600'
+                  )}
+                >
+                  {rejectedFinal ? (
+                    <XCircle className="w-3.5 h-3.5" />
+                  ) : revisionStep ? (
+                    <AlertTriangle className="w-3 h-3" />
+                  ) : completed ? (
+                    <Check className="w-3 h-3" />
+                  ) : (
+                    <Clock className="w-3 h-3" />
+                  )}
+                </span>
+                <span className="text-xs font-bold text-zinc-900">
+                  {rejectedFinal ? 'Tidak Lolos Seleksi' : stage.name}
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-600 leading-snug">
+                {revisionStep
+                  ? 'Unggah ulang berkas sesuai catatan panitia'
+                  : stage.description || `Tahap ${idx + 1} seleksi`}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   const stageIndex =
     status === 'SUBMITTED' || status === 'NEEDS_REVISION'

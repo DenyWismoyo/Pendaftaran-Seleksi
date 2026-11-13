@@ -9,6 +9,7 @@ import {
   Printer,
 } from 'lucide-react';
 import PanelRubricCard from '@/components/admin/PanelRubricCard';
+import { resolveFormStages } from '@/lib/selectionStages';
 import { printApplicantDossier } from '@/lib/submissionExport';
 import { formatBytes, formatDateID } from '@/lib/utils';
 import {
@@ -24,6 +25,7 @@ interface SubmissionDetailPanelProps {
   formDef?: SelectionForm;
   evaluatingAi: boolean;
   reviewStatus: SubmissionStatus;
+  currentStageId?: string;
   reviewerNote: string;
   revisionFields: string[];
   interviewSchedule: string;
@@ -32,6 +34,7 @@ interface SubmissionDetailPanelProps {
   onEvaluateAi: () => void;
   onPreviewFile: (file: UploadedFileMeta) => void;
   onReviewStatusChange: (status: SubmissionStatus) => void;
+  onCurrentStageChange?: (stageId: string) => void;
   onReviewerNoteChange: (note: string) => void;
   onToggleRevisionField: (fieldId: string) => void;
   onInterviewScheduleChange: (val: string) => void;
@@ -44,6 +47,7 @@ export default function SubmissionDetailPanel({
   formDef,
   evaluatingAi,
   reviewStatus,
+  currentStageId = '',
   reviewerNote,
   revisionFields,
   interviewSchedule,
@@ -52,6 +56,7 @@ export default function SubmissionDetailPanel({
   onEvaluateAi,
   onPreviewFile,
   onReviewStatusChange,
+  onCurrentStageChange,
   onReviewerNoteChange,
   onToggleRevisionField,
   onInterviewScheduleChange,
@@ -214,16 +219,50 @@ export default function SubmissionDetailPanel({
         )}
       </div>
 
+      {/* Rincian Nilai Per Tahapan Panitia Akses Kode */}
+      {submission.stageEvaluations && submission.stageEvaluations.length > 0 && (
+        <div className="border-t border-zinc-100 pt-4 space-y-2.5">
+          <h3 className="ui-eyebrow">
+            Rekap Penilaian Panitia Per Tahapan ({submission.stageEvaluations.length})
+          </h3>
+          <div className="space-y-2">
+            {submission.stageEvaluations.map((ev, idx) => (
+              <div
+                key={`${ev.stageId}-${ev.evaluatorId}-${idx}`}
+                className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
+              >
+                <div>
+                  <p className="font-bold text-zinc-900">
+                    {ev.stageName || ev.stageId} — {ev.evaluatorName}
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    {ev.roleTitle} {ev.note ? `• "${ev.note}"` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                    {ev.totalScore} / 100
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-800 text-[10px] font-bold">
+                    {ev.recommendation.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Keputusan Verifikasi Panitia */}
       <div className="border-t border-zinc-100 pt-4 space-y-3">
         <h3 className="ui-eyebrow">Keputusan &amp; Catatan Panitia</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <select
             value={reviewStatus}
             onChange={(e) =>
               onReviewStatusChange(e.target.value as SubmissionStatus)
             }
-            className="ui-input bg-white"
+            className="ui-input bg-white text-xs sm:text-sm"
           >
             <option value="SUBMITTED">Menunggu Verifikasi</option>
             <option value="NEEDS_REVISION">Perlu Perbaikan Berkas</option>
@@ -231,6 +270,20 @@ export default function SubmissionDetailPanel({
             <option value="INTERVIEW">Tahap Wawancara / Uji Gagasan</option>
             <option value="ACCEPTED">Lolos Seleksi</option>
             <option value="REJECTED">Tidak Lolos</option>
+          </select>
+
+          <select
+            value={currentStageId}
+            onChange={(e) => onCurrentStageChange?.(e.target.value)}
+            className="ui-input bg-white text-xs sm:text-sm"
+            title="Tahapan seleksi aktif pada timeline pelamar"
+          >
+            <option value="">Tahap: Otomatis (Ikuti Status)</option>
+            {resolveFormStages(formDef).map((st) => (
+              <option key={st.id} value={st.id}>
+                Tahap {st.order}: {st.name}
+              </option>
+            ))}
           </select>
 
           <button

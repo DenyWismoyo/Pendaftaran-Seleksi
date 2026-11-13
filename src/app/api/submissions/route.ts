@@ -20,6 +20,7 @@ import {
   getClientIp,
 } from '@/lib/security';
 import { dispatchApplicantNotification } from '@/lib/notifications';
+import { resolveFormStages } from '@/lib/selectionStages';
 
 export async function GET(req: NextRequest) {
   try {
@@ -71,6 +72,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const formSnap = submission.formId
+      ? await db.collection(COLLECTIONS.FORMS).doc(submission.formId).get()
+      : null;
+    const formData = formSnap?.exists
+      ? ({ id: formSnap.id, ...formSnap.data() } as SelectionForm)
+      : undefined;
+    const formStages = resolveFormStages(formData);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -81,6 +90,8 @@ export async function GET(req: NextRequest) {
         applicantName: submission.applicantName,
         applicantEmail: submission.applicantEmail,
         status: submission.status,
+        currentStageId: submission.currentStageId || '',
+        formStages,
         reviewerNote: submission.reviewerNote || '',
         revisionFields: submission.revisionFields || [],
         interviewSchedule: submission.interviewSchedule || '',
@@ -237,6 +248,9 @@ export async function POST(req: NextRequest) {
     const submissionId = `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const registrationCode = generateRegistrationCode();
 
+    const initialStages = resolveFormStages(form);
+    const firstStage = initialStages[0];
+
     const submissionData: SelectionSubmission = {
       id: submissionId,
       registrationCode,
@@ -250,6 +264,19 @@ export async function POST(req: NextRequest) {
       answers: payload.answers,
       files: payload.files,
       status: 'SUBMITTED',
+      ...(firstStage ? { currentStageId: firstStage.id } : {}),
+      stageHistory: firstStage
+        ? [
+            {
+              stageId: firstStage.id,
+              stageName: firstStage.name,
+              updatedBy: 'sistem',
+              updatedAt: now,
+              note: 'Pendaftaran diterima sistem',
+            },
+          ]
+        : [],
+      stageEvaluations: [],
       reviewerNote: '',
       revisionFields: [],
       interviewSchedule: '',

@@ -10,6 +10,8 @@ const UpdateSubmissionSchema = z.object({
   id: z.string().min(1).optional(),
   ids: z.array(z.string().min(1)).optional(),
   status: SubmissionStatusEnum,
+  currentStageId: z.string().optional(),
+  currentStageName: z.string().optional(),
   reviewerNote: z.string().optional().default(''),
   revisionFields: z.array(z.string()).optional(),
   interviewSchedule: z.string().optional(),
@@ -68,7 +70,16 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { id, ids, status, reviewerNote, revisionFields, interviewSchedule } = parsed.data;
+    const {
+      id,
+      ids,
+      status,
+      currentStageId,
+      currentStageName,
+      reviewerNote,
+      revisionFields,
+      interviewSchedule,
+    } = parsed.data;
     const targetIds = ids && ids.length > 0 ? ids : id ? [id] : [];
 
     if (targetIds.length === 0) {
@@ -86,6 +97,10 @@ export async function PATCH(req: NextRequest) {
       reviewedAt: now,
       updatedAt: now,
     };
+
+    if (currentStageId !== undefined) {
+      updatePayload.currentStageId = currentStageId;
+    }
 
     if (!ids || reviewerNote.trim() !== '') {
       updatePayload.reviewerNote = reviewerNote;
@@ -105,6 +120,20 @@ export async function PATCH(req: NextRequest) {
           { success: false, error: 'Data pendaftar tidak ditemukan.' },
           { status: 404 }
         );
+      }
+      const existingData = snap.data() as SelectionSubmission;
+      if (currentStageId && currentStageId !== existingData.currentStageId) {
+        const history = Array.isArray(existingData.stageHistory)
+          ? [...existingData.stageHistory]
+          : [];
+        history.push({
+          stageId: currentStageId,
+          stageName: currentStageName || currentStageId,
+          updatedBy: admin.email || admin.uid,
+          updatedAt: now,
+          note: reviewerNote || `Dipindahkan ke tahap ${currentStageName || currentStageId}`,
+        });
+        updatePayload.stageHistory = history;
       }
       await docRef.update(updatePayload);
       const updated = await docRef.get();
