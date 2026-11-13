@@ -15,6 +15,14 @@ import {
   WizardStep,
 } from '@/components/seleksi/types';
 import {
+  AutofillResultState,
+} from '@/components/seleksi/SmartAutofillSuggestionsCard';
+import {
+  getEffectiveFileAutofillTargets,
+  getRecommendedSourceFilesForForm,
+} from '@/lib/autofillMapper';
+import {
+  AutofillTargetInfo,
   SelectionDraft,
   SelectionField,
   SelectionForm,
@@ -60,6 +68,10 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
   const [restoreError, setRestoreError] = useState('');
   const [restoringFromServer, setRestoringFromServer] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<DuplicateInfo | null>(null);
+  const [autofillBusyField, setAutofillBusyField] = useState<string | null>(null);
+  const [autofillResult, setAutofillResult] = useState<AutofillResultState | null>(
+    null
+  );
 
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -568,12 +580,166 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
           ? `Berkas "${readyFile.name}" berhasil diganti.`
           : `Berkas "${readyFile.name}" tersimpan di draf sementara.`
       );
+
+      const targets = getEffectiveFileAutofillTargets(field, form);
+      const mimeOk = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+      ].includes(uploadedMeta.mimeType.toLowerCase());
+      if (targets.length > 0 && mimeOk && uploadedMeta.size <= 4 * 1024 * 1024) {
+        void extractAutofillFromFile(field, uploadedMeta, {
+          activeToken,
+          silentNoMatch: true,
+        });
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Gagal mengunggah berkas.');
     } finally {
       setUploadingFields((prev) => ({ ...prev, [field.id]: false }));
     }
   };
+
+  const recommendedSourceFiles = useMemo(
+    () => (form ? getRecommendedSourceFilesForForm(form) : []),
+    [form]
+  );
+
+  const autofillTargetsByField = useMemo<Record<string, AutofillTargetInfo[]>>(() => {
+    if (!form) return {};
+    const map: Record<string, AutofillTargetInfo[]> = {};
+    for (const f of form.fields) {
+      if (f.type === 'file') {
+        map[f.id] = getEffectiveFileAutofillTargets(f, form);
+      }
+    }
+    return map;
+  }, [form]);
+
+  const extractAutofillFromFile = async (
+    field: SelectionField,
+    fileMeta: UploadedFileMeta,
+    opts?: { activeToken?: string; silentNoMatch?: boolean }
+  ) => {
+    if (!form) return;
+    const targets = getEffectiveFileAutofillTargets(field, form);
+    if (targets.length === 0) {
+      if (!opts?.silentNoMatch) {
+        toast.info('Pengisian otomatis tidak aktif untuk berkas ini.');
+      }
+      return;
+    }
+
+    const mime = fileMeta.mimeType.toLowerCase();
+    const supportedMime = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+    ].includes(mime);
+    if (!supportedMime) {
+      if (!opts?.silentNoMatch) {
+        toast.info('Pembacaan isi berkas hanya mendukung format PDF, JPG, PNG, atau WEBP.');
+      }
+      return;
+    }
+    if (fileMeta.size > 4 * 1024 * 1024) {
+      if (!opts?.silentNoMatch) {
+        toast.info('Berkas melebihi 4 MB untuk pembacaan otomatis; silakan isi manual.');
+      }
+      return;
+    }
+
+    setAutofillBusyField(field.id);
+    try {
+      const res = await fetch('/api/autofill-from-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          formId: form.id,
+          fieldId: field.id,
+          storagePath: fileMeta.storagePath,
+          draftToken: opts?.activeToken ?? draftToken,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        if (!opts?.silentNoMatch) {
+          toast.error(json.error || 'Gagal membaca isi berkas.');
+        }
+        return;
+      }
+
+      const data = json.data as AutofillResultState;
+      if (data.suggestions && data.suggestions.length > 0) {
+        setAutofillResult(data);
+        toast.success(
+          `Terbaca ${data.suggestions.length} saran isian dari "${field.label}". Silakan tinjau & terapkan.`
+        );
+      } else if (!opts?.silentNoMatch) {
+        toast.info(
+          `Tidak ditemukan data tambahan yang cocok untuk kolom formulir dari "${field.label}".`
+        );
+      }
+    } catch {
+      if (!opts?.silentNoMatch) {
+        toast.error('Gagal menghubungi layanan pembacaan berkas.');
+      }
+    } finally {
+      setAutofillBusyField((prev) => (prev === field.id ? null : prev));
+    }
+  };
+
+  const isAutofillTargetFilled = useCallback(
+    (fieldId: string): boolean => {
+      if (fieldId === '__identity_name') return applicantName.trim().length > 0;
+      if (fieldId === '__identity_email') return applicantEmail.trim().length > 0;
+      if (fieldId === '__identity_phone') return applicantPhone.trim().length > 0;
+      const val = answers[fieldId];
+      if (Array.isArray(val)) return val.length > 0;
+      return String(val ?? '').trim().length > 0;
+    },
+    [applicantName, applicantEmail, applicantPhone, answers]
+  );
+
+  const applyAutofillSuggestions = (
+    items: Array<{ fieldId: string; value: string | string[] }>
+  ) => {
+    if (items.length === 0) return;
+    const nextAnswers = { ...answers };
+    const clearedIds: string[] = [];
+
+    for (const item of items) {
+      if (item.fieldId === '__identity_name') {
+        setApplicantName(String(item.value));
+        setDuplicateInfo(null);
+      } else if (item.fieldId === '__identity_email') {
+        setApplicantEmail(String(item.value));
+        setDuplicateInfo(null);
+      } else if (item.fieldId === '__identity_phone') {
+        setApplicantPhone(String(item.value));
+      } else {
+        nextAnswers[item.fieldId] = item.value;
+        clearedIds.push(item.fieldId);
+      }
+    }
+
+    setAnswers(nextAnswers);
+    if (clearedIds.length > 0) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        for (const id of clearedIds) delete copy[id];
+        return copy;
+      });
+    }
+    setAutofillResult(null);
+    toast.success(`${items.length} kolom formulir berhasil diisi dari berkas.`);
+  };
+
+  const dismissAutofillResult = () => setAutofillResult(null);
 
   const removeUploadedFile = async (fieldId: string) => {
     const existing = files.find((item) => item.fieldId === fieldId);
@@ -584,6 +750,9 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
       delete copy[fieldId];
       return copy;
     });
+    if (autofillResult?.sourceFieldId === fieldId) {
+      setAutofillResult(null);
+    }
 
     if (existing?.storagePath && draftToken) {
       await deleteTempFileOnServer(existing.storagePath, draftToken);
@@ -856,6 +1025,16 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     handleRestoreByCode,
     handleResetDraft,
     handleSubmit,
+    autofill: {
+      recommendedSources: recommendedSourceFiles,
+      targetsByField: autofillTargetsByField,
+      busyField: autofillBusyField,
+      result: autofillResult,
+      onExtract: extractAutofillFromFile,
+      onApply: applyAutofillSuggestions,
+      onDismiss: dismissAutofillResult,
+      isTargetFilled: isAutofillTargetFilled,
+    },
   };
 }
 

@@ -17,11 +17,15 @@ import {
   StepCompletionSummary,
   WizardStep,
 } from '@/components/seleksi/types';
+import SmartAutofillBanner from '@/components/seleksi/SmartAutofillBanner';
+import SmartAutofillSuggestionsCard, {
+  AutofillResultState,
+} from '@/components/seleksi/SmartAutofillSuggestionsCard';
 import WizardDynamicFields from '@/components/seleksi/WizardDynamicFields';
 import WizardIdentityFields from '@/components/seleksi/WizardIdentityFields';
 import WizardReviewStep from '@/components/seleksi/WizardReviewStep';
 import { cn } from '@/lib/utils';
-import { SelectionField, UploadedFileMeta } from '@/types/selection';
+import { AutofillTargetInfo, SelectionField, UploadedFileMeta } from '@/types/selection';
 
 interface WizardStepCardProps {
   currentStep: number;
@@ -64,6 +68,19 @@ interface WizardStepCardProps {
   onNextStep: () => void;
   onSkipStep: () => void;
   onSubmit: () => void;
+  autofill?: {
+    recommendedSources: Array<{
+      field: SelectionField;
+      targets: AutofillTargetInfo[];
+    }>;
+    targetsByField: Record<string, AutofillTargetInfo[]>;
+    busyField: string | null;
+    result: AutofillResultState | null;
+    onExtract: (field: SelectionField, file: UploadedFileMeta) => void;
+    onApply: (items: Array<{ fieldId: string; value: string | string[] }>) => void;
+    onDismiss: () => void;
+    isTargetFilled: (fieldId: string) => boolean;
+  };
 }
 
 export default function WizardStepCard({
@@ -104,9 +121,14 @@ export default function WizardStepCard({
   onNextStep,
   onSkipStep,
   onSubmit,
+  autofill,
 }: WizardStepCardProps) {
   const [onlyUnfilled, setOnlyUnfilled] = useState(false);
   const activeStepObj = wizardSteps[currentStep];
+
+  const busyFieldLabel = autofill?.busyField
+    ? fields.find((f) => f.id === autofill.busyField)?.label || 'Berkas'
+    : null;
 
   useEffect(() => {
     setOnlyUnfilled(false);
@@ -210,6 +232,29 @@ export default function WizardStepCard({
         </div>
       )}
 
+      {autofill &&
+        activeStepObj?.type !== 'review' &&
+        autofill.recommendedSources.length > 0 && (
+          <SmartAutofillBanner
+            recommendedSources={autofill.recommendedSources}
+            files={files}
+            uploadingFields={uploadingFields}
+            autofillBusyField={autofill.busyField}
+            onQuickUpload={onFileUpload}
+            onExtractExisting={autofill.onExtract}
+          />
+        )}
+
+      {autofill && (busyFieldLabel || autofill.result) && (
+        <SmartAutofillSuggestionsCard
+          busyFieldLabel={busyFieldLabel}
+          result={autofill.result}
+          isTargetFilled={autofill.isTargetFilled}
+          onApply={autofill.onApply}
+          onDismiss={autofill.onDismiss}
+        />
+      )}
+
       {activeStepObj?.type === 'identity' && (
         <WizardIdentityFields
           applicantName={applicantName}
@@ -231,6 +276,9 @@ export default function WizardStepCard({
           uploadingFields={uploadingFields}
           dragActiveField={dragActiveField}
           fieldErrors={fieldErrors}
+          autofillTargetsByField={autofill?.targetsByField}
+          autofillBusyField={autofill?.busyField}
+          onExtractAutofill={autofill?.onExtract}
           onAnswerChange={onAnswerChange}
           onCheckboxToggle={onCheckboxToggle}
           onFileUpload={onFileUpload}

@@ -39,6 +39,8 @@ export const SelectionFieldSchema = z.object({
   accept: z.string().optional().default('.pdf,.jpg,.jpeg,.png'),
   maxSizeMB: z.number().min(1).max(25).optional().default(5),
   width: z.enum(['full', 'half']).optional().default('full'),
+  autofillMode: z.enum(['auto', 'custom', 'off']).optional(),
+  autofillTargets: z.array(z.string()).optional(),
 });
 export type SelectionField = z.infer<typeof SelectionFieldSchema>;
 
@@ -54,6 +56,7 @@ export const SelectionFormSchema = z.object({
   startDate: z.string().optional().default(''),
   endDate: z.string().optional().default(''),
   requireAiPreScreening: z.boolean().default(false),
+  enableAiAutofill: z.boolean().optional(),
   aiCriteria: z.string().optional().default(''),
   fields: z.array(SelectionFieldSchema).min(1, 'Minimal harus ada 1 field formulir'),
   submissionCount: z.number().int().min(0).optional().default(0),
@@ -179,5 +182,21 @@ export interface SelectionDraft extends SelectionDraftPayload {
   expiresAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AutofillTargetInfo {
+  id: string;
+  label: string;
+  type: FieldType;
+  section: string;
+  options?: string[];
+}
+
+export interface AutofillSuggestion {
+  fieldId: string;
+  label: string;
+  value: string | string[];
+  confidence: 'high' | 'medium';
+  reason: string;
 }
 

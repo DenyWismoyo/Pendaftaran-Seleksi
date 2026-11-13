@@ -1,8 +1,16 @@
 'use client';
 
-import { Eye, FileText, FileUp, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  Eye,
+  FileSearch,
+  FileText,
+  FileUp,
+  Loader2,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import { cn, formatBytes } from '@/lib/utils';
-import { SelectionField, UploadedFileMeta } from '@/types/selection';
+import { AutofillTargetInfo, SelectionField, UploadedFileMeta } from '@/types/selection';
 
 interface WizardDynamicFieldsProps {
   fields: SelectionField[];
@@ -11,6 +19,9 @@ interface WizardDynamicFieldsProps {
   uploadingFields: Record<string, boolean>;
   dragActiveField: string | null;
   fieldErrors: Record<string, string>;
+  autofillTargetsByField?: Record<string, AutofillTargetInfo[]>;
+  autofillBusyField?: string | null;
+  onExtractAutofill?: (field: SelectionField, file: UploadedFileMeta) => void;
   onAnswerChange: (
     fieldId: string,
     value: string | number | boolean | string[]
@@ -29,6 +40,9 @@ export default function WizardDynamicFields({
   uploadingFields,
   dragActiveField,
   fieldErrors,
+  autofillTargetsByField,
+  autofillBusyField,
+  onExtractAutofill,
   onAnswerChange,
   onCheckboxToggle,
   onFileUpload,
@@ -44,6 +58,8 @@ export default function WizardDynamicFields({
         const isUploading = Boolean(uploadingFields[field.id]);
         const isDragging = dragActiveField === field.id;
         const isImage = uploadedFile?.mimeType.startsWith('image/');
+        const autofillTargets = autofillTargetsByField?.[field.id] || [];
+        const isAutofilling = autofillBusyField === field.id;
         const colSpan = field.width === 'half' ? 'sm:col-span-1' : 'sm:col-span-2';
         const strVal = String(answers[field.id] ?? '');
         const isNikField = /nik|nomor induk kependudukan/i.test(field.label);
@@ -206,7 +222,28 @@ export default function WizardDynamicFields({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {autofillTargets.length > 0 && onExtractAutofill && (
+                        <button
+                          type="button"
+                          onClick={() => onExtractAutofill(field, uploadedFile)}
+                          disabled={isAutofilling || isUploading}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 cursor-pointer disabled:opacity-60"
+                          title={`Baca dokumen untuk bantu mengisi ${autofillTargets.length} kolom`}
+                        >
+                          {isAutofilling ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <FileSearch className="w-3.5 h-3.5" />
+                          )}
+                          <span>
+                            {isAutofilling
+                              ? 'Membaca...'
+                              : `Isi Otomatis (${autofillTargets.length})`}
+                          </span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => onOpenPreview(uploadedFile)}
@@ -290,6 +327,12 @@ export default function WizardDynamicFields({
                             Format: {field.accept || '.pdf,.jpg,.png'} • Maks.{' '}
                             {field.maxSizeMB || 5} MB (foto besar otomatis dikompresi)
                           </p>
+                          {autofillTargets.length > 0 && (
+                            <p className="text-[11px] font-medium text-emerald-700 mt-1">
+                              Dapat membaca dokumen (PDF/gambar) untuk mengisi{' '}
+                              {autofillTargets.length} kolom otomatis
+                            </p>
+                          )}
                         </div>
                       </>
                     )}

@@ -22,8 +22,13 @@ import {
   SelectionFormStatus,
 } from '@/types/selection';
 import { SELECTION_CATEGORIES } from '@/lib/constants';
+import {
+  getEffectiveFileAutofillTargets,
+  suggestAutofillTargetsForFileField,
+} from '@/lib/autofillMapper';
 import { adminFetch } from '@/lib/adminClient';
 import { cn, slugify } from '@/lib/utils';
+import FileAutofillConfigCard from '@/components/admin/FileAutofillConfigCard';
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'text', label: 'Teks Singkat' },
@@ -127,6 +132,9 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
   );
   const [requireAiPreScreening, setRequireAiPreScreening] = useState<boolean>(
     initialData?.requireAiPreScreening ?? false
+  );
+  const [enableAiAutofill, setEnableAiAutofill] = useState<boolean>(
+    initialData?.enableAiAutofill ?? true
   );
   const [aiCriteria, setAiCriteria] = useState(initialData?.aiCriteria || '');
 
@@ -257,12 +265,15 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       if (d.slug && !isEditing) setSlug(d.slug);
       if (d.description) setDescription(d.description);
       if (d.requirementsNote) setRequirementsNote(d.requirementsNote);
+      if (typeof d.enableAiAutofill === 'boolean') {
+        setEnableAiAutofill(d.enableAiAutofill);
+      }
       if (d.aiCriteria) setAiCriteria(d.aiCriteria);
       if (Array.isArray(d.fields) && d.fields.length > 0) {
         setFields(d.fields);
       }
       setShowAutoAssist(false);
-      toast.success('Struktur formulir berhasil disusun.');
+      toast.success('Struktur formulir dan pemetaan dokumen cerdas berhasil disusun.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyusun struktur.');
     } finally {
@@ -292,6 +303,7 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
       startDate: '',
       endDate,
       requireAiPreScreening,
+      enableAiAutofill,
       aiCriteria: aiCriteria.trim(),
       fields: fields.map((f) => ({
         ...f,
@@ -528,6 +540,23 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-800 cursor-pointer">
                   <input
                     type="checkbox"
+                    checked={enableAiAutofill}
+                    onChange={(e) => setEnableAiAutofill(e.target.checked)}
+                    className="rounded accent-emerald-700"
+                  />
+                  <span>
+                    Aktifkan Pengisian Formulir Cerdas dari Berkas Peserta (Gemini Flash Lite)
+                  </span>
+                </label>
+                <p className="text-[11px] text-zinc-500 pl-6">
+                  Peserta mendapat saran otomatis untuk mengisi kolom isian (NIK, Identitas, Pendidikan, Pengalaman, Gagasan) langsung dari berkas KTP, Ijazah, CV, atau Makalah yang diunggah.
+                </p>
+              </div>
+
+              <div className="sm:col-span-2 ui-inset p-3.5 space-y-2.5">
+                <label className="flex items-center gap-2 text-xs font-semibold text-zinc-800 cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={requireAiPreScreening}
                     onChange={(e) => setRequireAiPreScreening(e.target.checked)}
                     className="rounded accent-zinc-900"
@@ -559,6 +588,39 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                {enableAiAutofill && fields.some((f) => f.type === 'file') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      let mappedFiles = 0;
+                      let mappedTargets = 0;
+                      setFields((prev) =>
+                        prev.map((f) => {
+                          if (f.type !== 'file') return f;
+                          const suggested = suggestAutofillTargetsForFileField(f, prev);
+                          if (suggested.length > 0) {
+                            mappedFiles++;
+                            mappedTargets += suggested.length;
+                          }
+                          return {
+                            ...f,
+                            autofillMode: suggested.length > 0 ? 'custom' : 'auto',
+                            autofillTargets: suggested,
+                          };
+                        })
+                      );
+                      toast.success(
+                        mappedFiles > 0
+                          ? `Terdeteksi ${mappedFiles} berkas sumber untuk mengisi ${mappedTargets} target kolom.`
+                          : 'Belum ada pasangan berkas-kolom otomatis; atur manual di masing-masing berkas.'
+                      );
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-semibold text-emerald-800 hover:bg-emerald-50 cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>Deteksi Pemetaan Berkas</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => addField('text')}
@@ -759,40 +821,50 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                     )}
 
                     {isFile && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-semibold text-zinc-600 block">
-                            Format Diterima
-                          </label>
-                          <input
-                            type="text"
-                            value={field.accept || '.pdf,.jpg,.jpeg,.png'}
-                            onChange={(e) =>
-                              updateField(index, { accept: e.target.value })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs font-mono"
-                          />
+                      <div className="space-y-3 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-zinc-600 block">
+                              Format Diterima
+                            </label>
+                            <input
+                              type="text"
+                              value={field.accept || '.pdf,.jpg,.jpeg,.png'}
+                              onChange={(e) =>
+                                updateField(index, { accept: e.target.value })
+                              }
+                              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs font-mono"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-zinc-600 block">
+                              Batas Ukuran (MB)
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={25}
+                              value={field.maxSizeMB || 5}
+                              onChange={(e) =>
+                                updateField(index, {
+                                  maxSizeMB: Math.min(
+                                    25,
+                                    Math.max(1, Number(e.target.value) || 5)
+                                  ),
+                                })
+                              }
+                              className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-semibold text-zinc-600 block">
-                            Batas Ukuran (MB)
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={25}
-                            value={field.maxSizeMB || 5}
-                            onChange={(e) =>
-                              updateField(index, {
-                                maxSizeMB: Math.min(
-                                  25,
-                                  Math.max(1, Number(e.target.value) || 5)
-                                ),
-                              })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs"
+
+                        {enableAiAutofill && (
+                          <FileAutofillConfigCard
+                            fileField={field}
+                            allFields={fields}
+                            onChange={(patch) => updateField(index, patch)}
                           />
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -845,6 +917,22 @@ export default function FormBuilder({ initialData }: FormBuilderProps) {
                       <span>
                         Upload ({f.accept || '.pdf,.jpg'}) • Maks {f.maxSizeMB || 5} MB
                       </span>
+                      {enableAiAutofill &&
+                        getEffectiveFileAutofillTargets(f, {
+                          enableAiAutofill,
+                          fields,
+                        }).length > 0 && (
+                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md mt-0.5">
+                            Dapat mengisi{' '}
+                            {
+                              getEffectiveFileAutofillTargets(f, {
+                                enableAiAutofill,
+                                fields,
+                              }).length
+                            }{' '}
+                            kolom otomatis
+                          </span>
+                        )}
                     </div>
                   ) : f.type === 'textarea' ? (
                     <div className="h-14 rounded-lg border border-zinc-200 bg-zinc-50" />

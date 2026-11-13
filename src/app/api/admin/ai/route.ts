@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, verifyAdminRequest } from '@/lib/firebaseAdmin';
 import { callGeminiLite, extractJsonFromAi } from '@/lib/gemini';
 import { COLLECTIONS } from '@/lib/constants';
+import { suggestAutofillTargetsForFileField } from '@/lib/autofillMapper';
 import { evaluateSubmissionWithAi } from '@/lib/aiEvaluator';
 import { assertAllowedAppOrigin, checkRateLimit } from '@/lib/security';
 import { SelectionField, SelectionForm, SelectionSubmission } from '@/types/selection';
@@ -69,11 +70,16 @@ Kembalikan HANYA JSON valid dengan struktur:
       "options": ["Opsi 1", "Opsi 2"],
       "accept": ".pdf,.jpg,.jpeg,.png",
       "maxSizeMB": 5,
-      "width": "full" | "half"
+      "width": "full" | "half",
+      "autofillMode": "auto" | "custom" | "off",
+      "autofillTargets": ["__identity_name", "camelCaseFieldIdYangBisaDiisiDariDokumenIni"]
     }
   ]
 }
-Catatan: Nama lengkap, email, dan nomor WhatsApp sudah otomatis tersedia di header form, jadi fokus pada field seleksi spesifik dan minimal 2 field bertipe "file" untuk upload berkas.`;
+Catatan:
+- Nama lengkap ("__identity_name"), email ("__identity_email"), dan nomor WhatsApp ("__identity_phone") sudah otomatis tersedia di Langkah 1.
+- Fokuskan field tambahan pada persyaratan seleksi spesifik dan minimal 2 field bertipe "file" (misal KTP, CV, Ijazah, Makalah).
+- Untuk field bertipe "file" yang relevan seperti KTP, CV, Ijazah, atau Makalah, set "autofillMode": "custom" dan isi "autofillTargets" dengan daftar id field yang dapat diekstrak otomatis dari berkas tersebut.`;
 
       const raw = await callGeminiLite({
         prompt,
@@ -90,6 +96,28 @@ Catatan: Nama lengkap, email, dan nomor WhatsApp sudah otomatis tersedia di head
         fields: SelectionField[];
       }>(raw);
 
+      const rawFields = Array.isArray(parsed.fields) ? parsed.fields : [];
+      const enrichedFields = rawFields.map((field) => {
+        if (field.type !== 'file') return field;
+        const autoSuggested = suggestAutofillTargetsForFileField(field, rawFields);
+        const existingTargets = Array.isArray(field.autofillTargets)
+          ? field.autofillTargets
+          : [];
+        const mergedTargets = Array.from(
+          new Set([...existingTargets, ...autoSuggested])
+        );
+        return {
+          ...field,
+          autofillMode:
+            field.autofillMode === 'off'
+              ? 'off'
+              : mergedTargets.length > 0
+                ? 'custom'
+                : 'auto',
+          autofillTargets: mergedTargets,
+        };
+      });
+
       return NextResponse.json({
         success: true,
         data: {
@@ -98,8 +126,9 @@ Catatan: Nama lengkap, email, dan nomor WhatsApp sudah otomatis tersedia di head
           category,
           description: parsed.description || '',
           requirementsNote: parsed.requirementsNote || '',
+          enableAiAutofill: true,
           aiCriteria: parsed.aiCriteria || '',
-          fields: Array.isArray(parsed.fields) ? parsed.fields : [],
+          fields: enrichedFields,
         },
       });
     }

@@ -152,6 +152,7 @@ function SelectionFormContent() {
             onNextStep={w.goToNextStep}
             onSkipStep={w.skipToNextStep}
             onSubmit={w.handleSubmit}
+            autofill={w.autofill}
           />
         </div>
       )}
