@@ -127,3 +127,4 @@ describe('DocumentTemplateInputSchema', () => {
     expect(parsed.success).toBe(false);
   });
 });
+

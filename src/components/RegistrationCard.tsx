@@ -41,7 +41,7 @@ export default function RegistrationCard({
         <div className="bg-zinc-900 text-white px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-[11px] font-mono uppercase tracking-widest text-zinc-400">
-              Kartu Bukti Pendaftaran Seleksi
+              Kandidat · Kartu Bukti Pendaftaran
             </p>
             <h3 className="text-base sm:text-lg font-bold tracking-tight">
               {formTitle}

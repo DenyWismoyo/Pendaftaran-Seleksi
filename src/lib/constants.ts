@@ -1,3 +1,11 @@
+export const BRAND = {
+  name: 'Kandidat',
+  tagline: 'Platform Seleksi & Rekrutmen Terpadu',
+  shortTagline: 'Rekrutmen & Seleksi Terpadu',
+  description:
+    'Platform resmi pendaftaran rekrutmen, seleksi terbuka, unggah dokumen persyaratan, dan verifikasi kandidat secara terpadu.',
+} as const;
+
 export const COLLECTIONS = {
   FORMS: 'selection_forms',
   SUBMISSIONS: 'selection_submissions',

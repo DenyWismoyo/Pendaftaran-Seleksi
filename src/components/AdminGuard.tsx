@@ -51,7 +51,7 @@ export default function AdminGuard({
       } else {
         setAdmin(null);
         setDeniedMsg(
-          res.error || 'Akun ini tidak memiliki izin akses panitia seleksi.'
+          res.error || 'Akun ini tidak memiliki izin akses tim seleksi / rekrutmen.'
         );
       }
       setChecking(false);
@@ -63,7 +63,7 @@ export default function AdminGuard({
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-500">
         <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
-        <p className="text-sm">Memverifikasi sesi panitia...</p>
+        <p className="text-sm">Memverifikasi sesi admin...</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function AdminGuard({
     { href: '/admin/forms/new', label: 'Buat Formulir', icon: PlusCircle },
     { href: '/admin/templates', label: 'Bank Template', icon: FileText },
     { href: '/admin/submissions', label: 'Verifikasi Pelamar', icon: Users },
-    { href: '/admin/users', label: 'Kelola Panitia', icon: UserCog },
+    { href: '/admin/users', label: 'Kelola Tim', icon: UserCog },
   ];
 
   return (

@@ -32,6 +32,7 @@ function buildEmailHtml(payload: SubmissionNotificationPayload, trackingUrl: str
           </p>
           <p>Anda dapat memantau status verifikasi berkas dan mencetak kartu peserta melalui tautan berikut:</p>
           <p><a href="${trackingUrl}" style="color:#047857;font-weight:600">${trackingUrl}</a></p>
+          <p style="margin-top:20px;font-size:12px;color:#71717a">Dikirim otomatis melalui platform <strong>Kandidat</strong>.</p>
         </div>
       `,
     };
@@ -46,11 +47,12 @@ function buildEmailHtml(payload: SubmissionNotificationPayload, trackingUrl: str
         <p>Status pendaftaran Anda (${payload.registrationCode}) pada <strong>${payload.formTitle}</strong> kini berstatus: <strong>${statusLabel}</strong>.</p>
         ${
           payload.reviewerNote
-            ? `<div style="padding:12px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin:12px 0"><strong>Catatan Panitia:</strong><br/>${payload.reviewerNote}</div>`
+            ? `<div style="padding:12px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin:12px 0"><strong>Catatan Tim Seleksi:</strong><br/>${payload.reviewerNote}</div>`
             : ''
         }
         <p>Periksa detail dan tindak lanjut melalui tautan berikut:</p>
         <p><a href="${trackingUrl}" style="color:#047857;font-weight:600">${trackingUrl}</a></p>
+        <p style="margin-top:20px;font-size:12px;color:#71717a">Dikirim otomatis melalui platform <strong>Kandidat</strong>.</p>
       </div>
     `,
   };
@@ -69,7 +71,7 @@ export async function dispatchApplicantNotification(
   const resendKey = process.env.RESEND_API_KEY?.trim();
   if (resendKey && payload.applicantEmail) {
     const mailFrom =
-      process.env.MAIL_FROM?.trim() || 'Panitia Seleksi <onboarding@resend.dev>';
+      process.env.MAIL_FROM?.trim() || 'Kandidat <onboarding@resend.dev>';
     const { subject, html } = buildEmailHtml(payload, trackingUrl);
 
     tasks.push(

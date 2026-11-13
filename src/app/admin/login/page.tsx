@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
-import { Loader2, LockKeyhole, LogIn } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import BrandLogo from '@/components/BrandLogo';
 import { auth } from '@/lib/firebase';
 import { adminFetch } from '@/lib/adminClient';
 
@@ -30,7 +31,7 @@ export default function AdminLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Masukkan email dan kata sandi panitia.');
+      toast.error('Masukkan email dan kata sandi admin/rekruter.');
       return;
     }
 
@@ -41,10 +42,10 @@ export default function AdminLoginPage() {
       const check = await adminFetch('/api/admin/me');
       if (!check.success) {
         throw new Error(
-          check.error || 'Akun tidak memiliki hak akses panitia seleksi.'
+          check.error || 'Akun tidak memiliki hak akses tim seleksi.'
         );
       }
-      toast.success('Berhasil masuk ke Meja Kerja Panitia.');
+      toast.success('Berhasil masuk ke Panel Kandidat.');
       router.replace('/admin');
     } catch (err: unknown) {
       toast.error(
@@ -59,29 +60,30 @@ export default function AdminLoginPage() {
   return (
     <div className="ui-shell-narrow max-w-md py-6 sm:py-16">
       <div className="ui-card p-6 sm:p-7 space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-zinc-900 text-white flex items-center justify-center mx-auto">
-            <LockKeyhole className="w-5 h-5" />
+        <div className="text-center space-y-2.5">
+          <div className="flex justify-center">
+            <BrandLogo showText={false} size="lg" />
           </div>
           <h1 className="text-xl font-bold text-zinc-900">
-            Masuk Meja Kerja Panitia
+            Masuk Panel Kandidat
           </h1>
           <p className="text-xs text-zinc-500">
-            Gunakan akun Panitia resmi yang terdaftar pada portal seleksi.
+            Gunakan akun Admin atau Tim Rekrutmen resmi yang terdaftar pada platform
+            Kandidat.
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-zinc-800 block">
-              Email Panitia
+              Email Admin / Rekruter
             </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@domain.id"
+              placeholder="rekrutmen@perusahaan.co.id"
               className="ui-input"
             />
           </div>

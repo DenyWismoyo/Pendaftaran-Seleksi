@@ -98,12 +98,12 @@ export default function HomePage() {
             Belum ada program seleksi yang tersedia
           </h3>
           <p className="text-sm text-zinc-500 max-w-md mx-auto">
-            Panitia dapat membuat formulir baru atau mengimpor template siap pakai di
-            halaman Panel Panitia.
+            Tim rekrutmen atau penyelenggara dapat membuat formulir seleksi baru di
+            halaman Panel Admin.
           </p>
           <div className="pt-2">
             <Link href="/admin" className="ui-btn-primary">
-              <span>Buka Panel Panitia</span>
+              <span>Buka Panel Admin</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

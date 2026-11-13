@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FileCheck, FileDown, Search, Settings2 } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
+import { BRAND } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 export default function Navbar() {
@@ -19,18 +21,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/90 bg-white/95 backdrop-blur-sm no-print">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 sm:gap-4">
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-mono text-xs font-bold tracking-tighter group-hover:bg-emerald-700 transition-colors">
-            PS
-          </div>
-          <div className="leading-tight min-w-0">
-            <span className="font-bold text-zinc-900 tracking-tight text-sm sm:text-base block truncate">
-              Pendaftaran Seleksi
-            </span>
-            <span className="text-[11px] text-zinc-500 font-medium hidden sm:block">
-              Registrasi Peserta &amp; Verifikasi Dokumen
-            </span>
-          </div>
+        <Link href="/" className="group min-w-0">
+          <BrandLogo subtitle={BRAND.shortTagline} />
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -72,7 +64,7 @@ export default function Navbar() {
             )}
           >
             <Settings2 className="w-3.5 h-3.5" />
-            <span>Panitia</span>
+            <span>Panel Admin</span>
           </Link>
         </nav>
       </div>

@@ -21,8 +21,8 @@ const DEFAULT_MARKDOWN_BOILERPLATE = `# JUDUL DOKUMEN TEMPLATE
 ---
 
 Kepada Yth.  
-**Ketua Panitia Seleksi BLUD Kawasan Sains dan Teknologi Solo Technopark**  
-di Surakarta
+**Tim Seleksi / HRD [Nama Perusahaan atau Instansi Penyelenggara]**  
+di [Kota Penyelenggara]
 
 Dengan hormat,
 
@@ -35,17 +35,18 @@ Saya yang bertanda tangan di bawah ini:
 
 Demikian dokumen ini saya buat dengan sebenar-benarnya.
 
-Surakarta, [Tanggal]  
+[Kota], [Tanggal]  
 Hormat saya,
 
-*(Tanda tangan di atas meterai Rp10.000 jika dipersyaratkan)*
+*(Tanda tangan / meterai bila dipersyaratkan)*
 
 **[Nama Lengkap]**
 `;
 
 const CATEGORY_PRESETS = [
-  'Seleksi Pejabat Teknis BLUD',
-  'Pelatihan Vokasi',
+  'Rekrutmen & Karier',
+  'Seleksi Jabatan / Terbuka',
+  'Pelatihan & Sertifikasi',
   'Magang & PKL',
   'Umum / Lintas Seleksi',
 ];
@@ -107,7 +108,7 @@ export default function TemplateEditorModal({
     if (!isEditing && !slugEditedManually) {
       const s = slugify(val);
       setSlug(s);
-      setFileBaseName(s ? `${s}-solo-technopark` : '');
+      setFileBaseName(s);
     }
   };
 
@@ -203,7 +204,7 @@ export default function TemplateEditorModal({
                 required
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="Contoh: Surat Lamaran Pejabat Teknis BLUD"
+                placeholder="Contoh: Surat Lamaran Kerja / Seleksi"
                 className="ui-input"
               />
             </div>
@@ -245,7 +246,7 @@ export default function TemplateEditorModal({
                 type="text"
                 value={fileBaseName}
                 onChange={(e) => setFileBaseName(e.target.value)}
-                placeholder="surat-lamaran-pejabat-teknis-solo-technopark"
+                placeholder="surat-lamaran-kandidat"
                 className="ui-input font-mono text-xs"
               />
             </div>
@@ -410,3 +411,4 @@ export default function TemplateEditorModal({
     </div>
   );
 }
+

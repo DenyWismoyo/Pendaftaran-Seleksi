@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 52" fill="none">
+  <!-- Logomark Kandidat -->
+  <g transform="translate(4, 6)">
+    <rect x="0" y="0" width="40" height="40" rx="10" fill="#18181B" />
+    <rect x="0.5" y="0.5" width="39" height="39" rx="9.5" stroke="#27272A" stroke-width="1" />
+    <rect x="10.25" y="9.5" width="4.5" height="21" rx="2.25" fill="#FFFFFF" />
+    <path
+      d="M17.2 19.6L27.75 10.75"
+      stroke="#10B981"
+      stroke-width="4.5"
+      stroke-linecap="round"
+    />
+    <path
+      d="M18.3 20.9L27.75 29.25"
+      stroke="#FFFFFF"
+      stroke-width="4.5"
+      stroke-linecap="round"
+    />
+    <circle cx="29.5" cy="10" r="2" fill="#34D399" />
+  </g>
+
+  <!-- Wordmark -->
+  <text
+    x="56"
+    y="28.5"
+    fill="#18181B"
+    font-family="Plus Jakarta Sans, Inter, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="22"
+    font-weight="800"
+    letter-spacing="-0.6"
+  >
+    Kandidat
+  </text>
+  <text
+    x="56.5"
+    y="42"
+    fill="#71717A"
+    font-family="Plus Jakarta Sans, Inter, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="9.5"
+    font-weight="600"
+    letter-spacing="1.4"
+  >
+    SELEKSI &amp; REKRUTMEN
+  </text>
+</svg>
+

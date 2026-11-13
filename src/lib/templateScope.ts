@@ -70,3 +70,4 @@ export function filterTemplatesForForm(
 
   return inferred.length > 0 ? inferred : templates;
 }
+

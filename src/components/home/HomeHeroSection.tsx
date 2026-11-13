@@ -31,7 +31,7 @@ const SELECTION_STEPS = [
   {
     step: '04',
     title: 'Cetak Kartu & Pantau Hasil',
-    desc: 'Dapatkan kode registrasi QR untuk melacak hasil verifikasi panitia.',
+    desc: 'Dapatkan kode registrasi QR untuk memantau hasil verifikasi tim seleksi.',
   },
 ];
 
@@ -53,13 +53,13 @@ export default function HomeHeroSection({
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-[1.15]">
-            Portal Pendaftaran &amp; Seleksi Berkas Peserta
+            Platform Rekrutmen &amp; Seleksi Kandidat Terpadu
           </h1>
 
           <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-2xl">
-            Ajukan pendaftaran program pelatihan, inkubasi, magang, atau rekrutmen
-            secara terstruktur. Unggah dokumen persyaratan Anda dan pantau proses
-            verifikasi panitia dalam satu tempat.
+            Ikuti proses rekrutmen karier, seleksi jabatan terbuka, pelatihan, magang,
+            hingga program inkubasi secara terstruktur. Unggah dokumen persyaratan Anda
+            dan pantau progres verifikasi dalam satu tempat.
           </p>
         </div>
 
@@ -127,12 +127,12 @@ export default function HomeHeroSection({
         </ol>
 
         <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-          <span>Butuh akses pengelolaan panitia?</span>
+          <span>Akses tim rekrutmen &amp; penyelenggara?</span>
           <Link
             href="/admin"
             className="text-emerald-400 font-semibold hover:text-emerald-300 inline-flex items-center gap-1"
           >
-            <span>Masuk Panitia</span>
+            <span>Masuk Panel Admin</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
