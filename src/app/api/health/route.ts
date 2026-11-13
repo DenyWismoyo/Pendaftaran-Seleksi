@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getAdminDb, SELEKSI_DATABASE_ID } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,12 +14,17 @@ export async function GET() {
       process.env.FIREBASE_ADMIN_PRIVATE_KEY
   );
 
+  let stage = 'import-firebaseAdmin';
   try {
-    const db = getAdminDb();
+    const mod = await import('@/lib/firebaseAdmin');
+    stage = 'getAdminDb';
+    const db = mod.getAdminDb();
+    stage = 'firestore-query';
     await db.collection('users').limit(1).get();
     return NextResponse.json({
       ok: true,
-      databaseId: SELEKSI_DATABASE_ID,
+      nodeVersion: process.version,
+      databaseId: mod.SELEKSI_DATABASE_ID,
       hasServiceAccountJson,
       hasAdminKeyParts,
     });
@@ -28,13 +32,13 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        databaseId: SELEKSI_DATABASE_ID,
+        stage,
+        nodeVersion: process.version,
         hasServiceAccountJson,
         hasAdminKeyParts,
-        error: err instanceof Error ? err.message : 'Admin SDK gagal terhubung.',
+        error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
       },
       { status: 500 }
     );
   }
 }
-
