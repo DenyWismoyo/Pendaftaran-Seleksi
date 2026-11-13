@@ -8,6 +8,7 @@ import { validateDynamicSubmission } from '@/lib/validation';
 import {
   ChecklistItem,
   DuplicateInfo,
+  StepCompletionSummary,
   SubmissionReceipt,
   SyncState,
   WizardDraft,
@@ -357,7 +358,7 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
       {
         id: '__identity_phone',
         label: 'Nomor WhatsApp / HP',
-        completed: applicantPhone.trim().length >= 8,
+        completed: applicantPhone.replace(/\D/g, '').length >= 8,
         stepIndex: 0,
       },
     ];
@@ -397,6 +398,58 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     () => checklist.items.filter((item) => !item.completed),
     [checklist.items]
   );
+
+  const stepSummaries: StepCompletionSummary[] = useMemo(() => {
+    return wizardSteps.map((step, idx) => {
+      if (step.type === 'review') {
+        const checkDone =
+          (selfCheckReadability ? 1 : 0) + (selfCheckTruthfulness ? 1 : 0);
+        return {
+          stepIndex: idx,
+          key: step.key,
+          title: step.title,
+          type: step.type,
+          totalFields: 2,
+          requiredCount: 2,
+          completedRequiredCount: checkDone,
+          isComplete: missingItems.length === 0 && checkDone === 2,
+        };
+      }
+
+      const stepItems = checklist.items.filter((item) => item.stepIndex === idx);
+      const completedRequiredCount = stepItems.filter((item) => item.completed).length;
+      const requiredCount = stepItems.length;
+      const totalFields = step.type === 'identity' ? 3 : step.fields.length;
+
+      return {
+        stepIndex: idx,
+        key: step.key,
+        title: step.title,
+        type: step.type,
+        totalFields,
+        requiredCount,
+        completedRequiredCount,
+        isComplete: requiredCount === 0 || completedRequiredCount >= requiredCount,
+      };
+    });
+  }, [
+    wizardSteps,
+    checklist.items,
+    missingItems.length,
+    selfCheckReadability,
+    selfCheckTruthfulness,
+  ]);
+
+  const nextIncompleteStepIndex = useMemo(() => {
+    const incompleteSteps = stepSummaries.filter(
+      (s) => s.type !== 'review' && !s.isComplete
+    );
+    if (incompleteSteps.length === 0) return null;
+    const afterCurrent = incompleteSteps.find((s) => s.stepIndex > currentStep);
+    if (afterCurrent) return afterCurrent.stepIndex;
+    const other = incompleteSteps.find((s) => s.stepIndex !== currentStep);
+    return (other ?? incompleteSteps[0]).stepIndex;
+  }, [stepSummaries, currentStep]);
 
   const handleAnswerChange = (
     fieldId: string,
@@ -543,44 +596,33 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     setCheckedFileIds((prev) => ({ ...prev, [file.fieldId]: true }));
   };
 
-  const validateCurrentStep = (): boolean => {
-    const step = wizardSteps[currentStep];
-    if (!step) return true;
-
-    if (step.type === 'identity') {
-      if (applicantName.trim().length < 2) {
-        toast.error('Nama lengkap wajib diisi minimal 2 karakter.');
-        return false;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(applicantEmail.trim())) {
-        toast.error('Masukkan alamat email yang valid.');
-        return false;
-      }
-      if (applicantPhone.trim().length < 8) {
-        toast.error('Nomor WhatsApp / HP minimal 8 digit.');
-        return false;
-      }
-      return true;
-    }
-
-    if (step.type === 'section') {
-      const check = validateDynamicSubmission(step.fields, answers, files);
-      if (!check.valid) {
-        setFieldErrors((prev) => ({ ...prev, ...check.errors }));
-        toast.error(Object.values(check.errors)[0]);
-        return false;
-      }
-    }
-    return true;
-  };
-
   const jumpToStep = (stepIndex: number) => {
     setCurrentStep(Math.max(0, Math.min(wizardSteps.length - 1, stepIndex)));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goToNextStep = () => {
-    if (!validateCurrentStep()) return;
+    // Allow non-blocking progression so applicants can fill sections in any order.
+    const step = wizardSteps[currentStep];
+    if (step?.type === 'section') {
+      const check = validateDynamicSubmission(step.fields, answers, files);
+      const filledInvalidErrors: Record<string, string> = {};
+      for (const [fId, msg] of Object.entries(check.errors)) {
+        const val = answers[fId];
+        const hasValue = Array.isArray(val)
+          ? val.length > 0
+          : String(val ?? '').trim().length > 0;
+        if (hasValue) filledInvalidErrors[fId] = msg;
+      }
+      if (Object.keys(filledInvalidErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...filledInvalidErrors }));
+      }
+    }
+    setCurrentStep((prev) => Math.min(wizardSteps.length - 1, prev + 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const skipToNextStep = () => {
     setCurrentStep((prev) => Math.min(wizardSteps.length - 1, prev + 1));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -796,6 +838,8 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     duplicateInfo,
     setDuplicateInfo,
     wizardSteps,
+    stepSummaries,
+    nextIncompleteStepIndex,
     checklist,
     missingItems,
     handleAnswerChange,
@@ -805,6 +849,7 @@ export function useSelectionWizard(slug: string, queryDraftToken: string) {
     handleOpenPreview,
     jumpToStep,
     goToNextStep,
+    skipToNextStep,
     goToPrevStep,
     handleSaveAndContinueLater,
     handleRestoreByCode,

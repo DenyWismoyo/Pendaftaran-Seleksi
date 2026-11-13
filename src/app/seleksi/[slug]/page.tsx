@@ -99,6 +99,8 @@ function SelectionFormContent() {
             totalCount={w.checklist.totalCount}
             percent={w.checklist.percent}
             missingItems={w.missingItems}
+            stepSummaries={w.stepSummaries}
+            nextIncompleteStepIndex={w.nextIncompleteStepIndex}
             showMissingDetails={w.showMissingDetails}
             onToggleDetails={() => w.setShowMissingDetails((prev) => !prev)}
             onJumpToStep={w.jumpToStep}
@@ -106,13 +108,17 @@ function SelectionFormContent() {
 
           <WizardStepperNav
             steps={w.wizardSteps}
+            stepSummaries={w.stepSummaries}
             currentStep={w.currentStep}
-            onStepSelect={w.setCurrentStep}
+            onStepSelect={w.jumpToStep}
+            onSkipStep={w.skipToNextStep}
           />
 
           <WizardStepCard
             currentStep={w.currentStep}
             wizardSteps={w.wizardSteps}
+            stepSummary={w.stepSummaries[w.currentStep]}
+            nextIncompleteStepIndex={w.nextIncompleteStepIndex}
             fields={w.form.fields}
             applicantName={w.applicantName}
             applicantEmail={w.applicantEmail}
@@ -144,6 +150,7 @@ function SelectionFormContent() {
             onTruthfulnessChange={w.setSelfCheckTruthfulness}
             onPrevStep={w.goToPrevStep}
             onNextStep={w.goToNextStep}
+            onSkipStep={w.skipToNextStep}
             onSubmit={w.handleSubmit}
           />
         </div>

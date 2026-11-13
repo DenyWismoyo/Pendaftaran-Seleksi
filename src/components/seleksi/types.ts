@@ -36,6 +36,17 @@ export interface WizardStep {
   fields: SelectionField[];
 }
 
+export interface StepCompletionSummary {
+  stepIndex: number;
+  key: string;
+  title: string;
+  type: WizardStep['type'];
+  totalFields: number;
+  requiredCount: number;
+  completedRequiredCount: number;
+  isComplete: boolean;
+}
+
 export interface DuplicateInfo {
   message: string;
   registrationCode?: string;
