@@ -8,6 +8,16 @@ import { getStorage } from 'firebase-admin/storage';
 import { ADMIN_ROLES } from './constants';
 
 let adminApp: App | null = null;
+let seleksiDb: Firestore | null = null;
+
+export const SELEKSI_DATABASE_ID =
+  process.env.NEXT_PUBLIC_SELEKSI_DATABASE_ID || 'pendaftaran-seleksi';
+
+export const SELEKSI_STORAGE_BUCKET =
+  process.env.NEXT_PUBLIC_SELEKSI_STORAGE_BUCKET ||
+  process.env.FIREBASE_STORAGE_BUCKET ||
+  process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+  'seleksi-solo-technopark';
 
 function initAdminApp(): App {
   if (adminApp) return adminApp;
@@ -16,18 +26,17 @@ function initAdminApp(): App {
     return adminApp;
   }
 
-  const bucket =
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    process.env.FIREBASE_STORAGE_BUCKET;
-
   // 1. Local development: file service-account-katalog.json (gitignored)
-  const localServiceAccountPath = path.resolve(process.cwd(), 'service-account-katalog.json');
+  const localServiceAccountPath = path.resolve(
+    process.cwd(),
+    'service-account-katalog.json'
+  );
   if (fs.existsSync(localServiceAccountPath)) {
     const raw = fs.readFileSync(localServiceAccountPath, 'utf-8');
     const sa = JSON.parse(raw);
     adminApp = initializeApp({
       credential: cert(sa),
-      storageBucket: bucket,
+      storageBucket: SELEKSI_STORAGE_BUCKET,
     });
     return adminApp;
   }
@@ -40,7 +49,7 @@ function initAdminApp(): App {
     const sa = JSON.parse(saJson);
     adminApp = initializeApp({
       credential: cert(sa),
-      storageBucket: bucket,
+      storageBucket: SELEKSI_STORAGE_BUCKET,
     });
     return adminApp;
   }
@@ -62,7 +71,7 @@ function initAdminApp(): App {
         clientEmail,
         privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
-      storageBucket: bucket,
+      storageBucket: SELEKSI_STORAGE_BUCKET,
     });
     return adminApp;
   }
@@ -70,40 +79,47 @@ function initAdminApp(): App {
   // 4. Default ADC fallback (Google Cloud / App Hosting)
   adminApp = initializeApp({
     projectId,
-    storageBucket: bucket,
+    storageBucket: SELEKSI_STORAGE_BUCKET,
   });
   return adminApp;
 }
 
+/**
+ * Mengambil instance Firestore Admin yang terhubung ke database terpisah "pendaftaran-seleksi".
+ */
 export function getAdminDb(): Firestore {
-  const db = getFirestore(initAdminApp());
+  if (seleksiDb) return seleksiDb;
+  seleksiDb = getFirestore(initAdminApp(), SELEKSI_DATABASE_ID);
   try {
-    db.settings({ ignoreUndefinedProperties: true });
+    seleksiDb.settings({ ignoreUndefinedProperties: true });
   } catch {
     // Already initialized
   }
-  return db;
+  return seleksiDb;
 }
 
 export function getAdminAuth(): Auth {
   return getAuth(initAdminApp());
 }
 
+/**
+ * Mengambil bucket Cloud Storage terpisah "seleksi-solo-technopark".
+ */
 export function getAdminBucket() {
-  const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  return getStorage(initAdminApp()).bucket(bucketName);
+  return getStorage(initAdminApp()).bucket(SELEKSI_STORAGE_BUCKET);
 }
 
 export interface VerifiedAdminUser {
   uid: string;
   email?: string;
+  name?: string;
   role: string;
   token: DecodedIdToken;
 }
 
 /**
  * Verifikasi Firebase ID Token dari header Authorization: Bearer <token>
- * dan pastikan user memiliki salah satu ADMIN_ROLES.
+ * dan cek tabel admin terpisah `users/{uid}` di database "pendaftaran-seleksi".
  */
 export async function verifyAdminRequest(
   req: NextRequest
@@ -115,22 +131,26 @@ export async function verifyAdminRequest(
     if (!idToken) return null;
 
     const decoded = await getAdminAuth().verifyIdToken(idToken);
-    let role = (decoded.role as string | undefined) || '';
 
-    if (!role) {
-      const userSnap = await getAdminDb().collection('users').doc(decoded.uid).get();
-      if (userSnap.exists) {
-        role = String(userSnap.data()?.role || '');
-      }
+    // Role diverifikasi khusus dari koleksi `users` di database "pendaftaran-seleksi"
+    // agar akun admin terpisah dari sistem lain.
+    const userSnap = await getAdminDb().collection('users').doc(decoded.uid).get();
+    if (!userSnap.exists) {
+      return null;
     }
 
-    if (!ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number])) {
+    const userData = userSnap.data();
+    const role = String(userData?.role || '');
+    const isActive = userData?.isActive !== false;
+
+    if (!isActive || !ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number])) {
       return null;
     }
 
     return {
       uid: decoded.uid,
-      email: decoded.email,
+      email: decoded.email || String(userData?.email || ''),
+      name: String(userData?.name || decoded.name || ''),
       role,
       token: decoded,
     };
@@ -138,4 +158,3 @@ export async function verifyAdminRequest(
     return null;
   }
 }
-

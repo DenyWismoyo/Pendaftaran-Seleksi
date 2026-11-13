@@ -2,7 +2,7 @@
 
 ## 1. Integritas Data & Skema
 - **SR-001 (Zod Single Source of Truth):** Semua struktur data utama (`SelectionForm`, `SelectionField`, `SelectionSubmission`, `UploadedFileMeta`) wajib didefinisikan di `src/types/selection.ts` menggunakan Zod schema dan type inferensi `z.infer`.
-- **SR-002 (Isolasi Koleksi):** Nama koleksi Firestore wajib diambil dari `COLLECTIONS` di `src/lib/constants.ts` (`selection_forms`, `selection_submissions`). Dilarang hardcode string nama koleksi di API route atau komponen.
+- **SR-002 (Isolasi Database & Storage):** Seluruh koneksi Firestore wajib menargetkan database `pendaftaran-seleksi` (`NEXT_PUBLIC_SELEKSI_DATABASE_ID`), bucket Storage `seleksi-solo-technopark` (`NEXT_PUBLIC_SELEKSI_STORAGE_BUCKET`), serta nama koleksi dari `COLLECTIONS` di `src/lib/constants.ts` (`selection_forms`, `selection_submissions`, `users`).
 - **SR-003 (Atomic Batch):** Operasi yang mengubah lebih dari satu dokumen (misal: membuat submission + menaikkan `submissionCount`, atau bulk update status pelamar) wajib menggunakan `db.batch()`.
 
 ## 2. Keamanan & Privasi
@@ -18,3 +18,4 @@
 
 ## 4. Verifikasi Sebelum Commit / Push
 - **SR-011:** Setiap perubahan wajib lolos `npx tsc --noEmit` dan `npm run build` tanpa error.
+

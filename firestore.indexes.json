@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "selection_submissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "formId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
+

@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Cloud Storage Security Rules khusus bucket terpisah: gs://seleksi-solo-technopark
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isAllowedDoc() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+
+    // Berkas unggahan seleksi (selection_uploads/{formId}/{fieldId}/{fileName})
+    // Upload dilakukan via Next.js server route (/api/upload) dengan firebase-admin.
+    // Pembacaan dilakukan melalui download URL bertoken Firebase atau akun terautentikasi.
+    match /selection_uploads/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && isAllowedDoc() && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    // Default deny untuk path lainnya
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

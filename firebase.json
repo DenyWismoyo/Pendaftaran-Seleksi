@@ -1,0 +1,13 @@
+{
+  "firestore": {
+    "database": "pendaftaran-seleksi",
+    "location": "asia-southeast2",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "bucket": "seleksi-solo-technopark",
+    "rules": "storage.rules"
+  }
+}
+

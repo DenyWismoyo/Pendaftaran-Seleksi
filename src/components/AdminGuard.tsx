@@ -10,6 +10,7 @@ import {
   LogOut,
   PlusCircle,
   ShieldAlert,
+  UserCog,
   Users,
 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
@@ -91,6 +92,7 @@ export default function AdminGuard({
     { href: '/admin', label: 'Daftar Formulir', icon: LayoutDashboard },
     { href: '/admin/forms/new', label: 'Buat Formulir', icon: PlusCircle },
     { href: '/admin/submissions', label: 'Verifikasi Pelamar', icon: Users },
+    { href: '/admin/users', label: 'Kelola Panitia', icon: UserCog },
   ];
 
   return (

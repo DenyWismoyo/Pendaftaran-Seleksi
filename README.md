@@ -29,9 +29,20 @@ npm install
 npm run dev
 ```
 
-## Koleksi Firestore & Path Storage
+## Database & Storage Terpisah
 
-Aplikasi ini menggunakan koleksi terpisah agar tidak bertabrakan dengan data produksi utama:
-- Firestore: `selection_forms`, `selection_submissions`
-- Firebase Storage: `selection_uploads/{formId}/{fieldId}/...`
+Aplikasi ini berjalan di database dan bucket terpisah (tidak mencampuri database `(default)`):
+- Firestore Database: `pendaftaran-seleksi` (`asia-southeast2`, Standard Edition)
+  - Koleksi: `selection_forms`, `selection_submissions`, `users`
+- Cloud Storage Bucket: `seleksi-solo-technopark` (`asia-southeast2`)
+  - Path berkas: `selection_uploads/{formId}/{fieldId}/...`
+
+### Mendaftarkan Akun Panitia Pertama (`super_admin`)
+Karena koleksi `users` dipisahkan ke database `pendaftaran-seleksi`, daftarkan akun panitia pertama lewat CLI:
+
+```bash
+node scripts/manage-admin.mjs add email@domain.id super_admin PasswordAwal123 "Nama Panitia"
+```
+
+Setelah masuk ke `/admin`, Anda dapat menambah atau mengelola panitia lain langsung melalui menu **Kelola Panitia** (`/admin/users`).
 

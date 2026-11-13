@@ -31,3 +31,4 @@ description: >-
 - **In-App Preview Modal:** Gambar ditampilkan via `<img>` dan dokumen PDF via `<iframe>`
   di dalam modal agar panitia dapat memeriksa berkas tanpa membuka puluhan tab baru.
 - **Export CSV:** Sertakan UTF-8 BOM (`\uFEFF`) agar file CSV langsung terbaca rapi di Microsoft Excel.
+

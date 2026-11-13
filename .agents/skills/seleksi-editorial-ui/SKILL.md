@@ -35,3 +35,4 @@ yang tepercaya, tenang, dan fungsional** — bukan tampilan demo AI yang seragam
    Bagi formulir panjang menjadi tahapan logis (*Identitas* → *Section* → *Tinjau & Kirim*) dengan stepper horizontal dan *auto-save draft* ke `localStorage`.
 3. **Kartu Bukti QR (`src/components/RegistrationCard.tsx`):**
    Selalu dukung cetak bersih dengan kelas `.no-print` untuk menyembunyikan navigasi dan `.print-only-card` untuk menjaga bingkai kartu saat `window.print()`.
+

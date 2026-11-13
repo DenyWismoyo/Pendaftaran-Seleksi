@@ -34,3 +34,4 @@ panitia dan pelamar secara bertahap, tanpa menambah kompleksitas yang belum dibu
 - [ ] **Automated Tests (Vitest):** Unit test untuk `validateDynamicSubmission`, `getDeadlineBadge`, dan validasi payload Zod.
 - [ ] **Rate Limiting Publik:** Proteksi `POST /api/upload` dan `POST /api/submissions` per IP untuk mencegah spam upload/registrasi.
 - [ ] **Cleanup Storage Otomatis:** Hapus berkas sementara di Firebase Storage jika pelamar membatalkan/menghapus berkas sebelum submit, atau saat panitia menghapus data uji coba.
+

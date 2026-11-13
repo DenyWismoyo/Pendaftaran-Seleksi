@@ -15,15 +15,20 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-const bucketUrl = storageBucket
-  ? storageBucket.startsWith('gs://')
-    ? storageBucket
-    : `gs://${storageBucket}`
-  : undefined;
+// Database Firestore terpisah khusus sistem Pendaftaran Seleksi
+const seleksiDatabaseId =
+  process.env.NEXT_PUBLIC_SELEKSI_DATABASE_ID || 'pendaftaran-seleksi';
+
+// Bucket Cloud Storage terpisah khusus berkas Pendaftaran Seleksi
+const seleksiBucket =
+  process.env.NEXT_PUBLIC_SELEKSI_STORAGE_BUCKET ||
+  process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+  'seleksi-solo-technopark';
+const bucketUrl = seleksiBucket.startsWith('gs://')
+  ? seleksiBucket
+  : `gs://${seleksiBucket}`;
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
-export { app };
-
+export const db = getFirestore(app, seleksiDatabaseId);
+export const storage = getStorage(app, bucketUrl);
+export { app, seleksiDatabaseId, seleksiBucket };

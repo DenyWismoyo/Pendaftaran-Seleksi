@@ -1,6 +1,7 @@
 export const COLLECTIONS = {
   FORMS: 'selection_forms',
   SUBMISSIONS: 'selection_submissions',
+  USERS: 'users',
 } as const;
 
 export const ADMIN_ROLES = [
@@ -54,4 +55,3 @@ export const SUBMISSION_STATUS_META = {
     badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
   },
 } as const;
-

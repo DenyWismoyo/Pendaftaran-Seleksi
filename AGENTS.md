@@ -32,9 +32,11 @@ Clario AI (opsional untuk asisten panitia).
 
 ## 🔒 Aturan Wajib Sebelum Mengedit
 
-1. **Isolasi Data Firebase**: Gunakan HANYA koleksi `selection_forms`,
-   `selection_submissions`, dan folder Storage `selection_uploads/` agar tidak
-   pernah bertabrakan dengan data produksi aplikasi lain di proyek Firebase yang sama.
+1. **Isolasi Database & Storage**: Sistem ini menggunakan database Firestore terpisah
+   (`pendaftaran-seleksi` via `NEXT_PUBLIC_SELEKSI_DATABASE_ID`) dan bucket
+   Cloud Storage terpisah (`seleksi-solo-technopark` via
+   `NEXT_PUBLIC_SELEKSI_STORAGE_BUCKET`). Akun admin panitia diverifikasi dari koleksi
+   `users` di dalam database `pendaftaran-seleksi` itu sendiri.
 2. **Jangan Pernah Commit Rahasia**: Pastikan `.env.local` dan `*service-account*.json`
    selalu tercantum di `.gitignore` dan tidak pernah di-stage ke Git.
 3. **Otorisasi Panitia**: Semua route `/api/admin/*` WAJIB memanggil
@@ -51,3 +53,4 @@ Clario AI (opsional untuk asisten panitia).
 - `.agents/skills/seleksi-editorial-ui/SKILL.md` — Standar UI editorial & anti-AI-slop
 - `.agents/skills/seleksi-form-workflow/SKILL.md` — Panduan form builder, upload & verifikasi
 - `.agents/skills/seleksi-organic-roadmap/SKILL.md` — Roadmap pengembangan organik bertahap
+

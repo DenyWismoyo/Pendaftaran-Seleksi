@@ -1,0 +1,347 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model (Database: pendaftaran-seleksi)
+    // ===============================================================
+    //
+    // Dedicated database isolated from Teknopark "(default)".
+    // Admin/staff roles are stored exclusively in this database's
+    // `users/{uid}` collection (NOT JWT custom claims).
+    //
+    // Collection: users/{userId}
+    // Document ID: Firebase Auth UID
+    // Fields:
+    //   - uid: string (optional, immutable, must equal userId, 1..128 chars)
+    //   - email: string (optional, valid email, <= 254 chars)
+    //   - name: string (optional, 1..120 chars)
+    //   - displayName: string (optional, 1..120 chars)
+    //   - role: string (required, enum: super_admin | admin | admin_pelatihan | operator_pelatihan | admin_tenant | operator_tenant)
+    //   - active: bool (optional)
+    //   - createdBy: string (optional, immutable, <= 128 chars)
+    //   - createdAt: timestamp or ISO string (optional, immutable)
+    //   - updatedAt: timestamp or ISO string (optional)
+    //
+    // Collection: selection_forms/{formId}
+    // Document ID: form-{timestamp}-{rand} or custom form ID
+    // Fields:
+    //   - id: string (optional, immutable, must equal formId, 1..128 chars)
+    //   - title: string (required, 3..200 chars)
+    //   - slug: string (required, 3..160 chars, ^[a-z0-9-]+$)
+    //   - category: string (optional, 2..80 chars)
+    //   - description: string (optional, <= 5000 chars)
+    //   - requirementsNote: string (optional, <= 5000 chars)
+    //   - status: string (required, enum: DRAFT | OPEN | CLOSED)
+    //   - quota: int (optional, 0..1000000)
+    //   - startDate: string (optional, <= 40 chars)
+    //   - endDate: string (optional, <= 40 chars)
+    //   - requireAiPreScreening: bool (optional)
+    //   - aiCriteria: string (optional, <= 5000 chars)
+    //   - fields: list (required, 1..100 field definition maps)
+    //   - submissionCount: int (optional, 0..1000000)
+    //   - createdBy: string (optional, immutable, <= 150 chars)
+    //   - createdAt: timestamp or ISO string (optional, immutable)
+    //   - updatedAt: timestamp or ISO string (optional)
+    //
+    // Collection: selection_submissions/{submissionId}
+    // Document ID: sub-{timestamp}-{rand}
+    // Note: Public submissions and status lookup go strictly through
+    // Next.js server API routes (/api/submissions via firebase-admin)
+    // to protect applicant PII (NIK, email, phone, files).
+    // Fields:
+    //   - id: string (optional, immutable, must equal submissionId, 1..128 chars)
+    //   - registrationCode: string (required, immutable, 4..40 chars)
+    //   - formId: string (required, immutable, 1..128 chars)
+    //   - formTitle: string (required, 1..200 chars)
+    //   - formSlug: string (required, 1..160 chars)
+    //   - applicantName: string (required, 2..150 chars)
+    //   - applicantEmail: string (required, valid email, <= 254 chars)
+    //   - applicantPhone: string (required, 6..30 chars)
+    //   - answers: map (required, <= 100 entries)
+    //   - files: list (required, <= 30 file metadata items)
+    //   - status: string (required, enum: SUBMITTED | REVIEWING | ACCEPTED | REJECTED)
+    //   - reviewerNote: string (optional, <= 5000 chars)
+    //   - reviewedBy: string (optional, <= 150 chars)
+    //   - reviewedAt: timestamp or ISO string (optional)
+    //   - aiEvaluation: map (optional, validated structure)
+    //   - createdAt: timestamp or ISO string (optional, immutable)
+    //   - updatedAt: timestamp or ISO string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Look up role from THIS database's users/{uid} collection; default to 'public'
+    function getUserRole() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'public')
+        : 'public';
+    }
+
+    function validAdminRoles() {
+      return [
+        'super_admin',
+        'admin',
+        'admin_pelatihan',
+        'operator_pelatihan',
+        'admin_tenant',
+        'operator_tenant'
+      ];
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserRole() == 'super_admin';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() in ['super_admin', 'admin'];
+    }
+
+    function isSelectionAdmin() {
+      return isAuthenticated() && getUserRole() in validAdminRoles();
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() >= 5 &&
+        email.size() <= 254 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateOrTimestamp(val) {
+      return val is timestamp ||
+        (val is string && val.size() <= 40 &&
+          (val == "" || val.matches("^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}.*)?$")));
+    }
+
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) ||
+        (data[field] is string &&
+          data[field].size() >= minLen &&
+          data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update)
+    // ===============================================================
+
+    function isValidUser(data, userId) {
+      let allowedKeys = [
+        'uid',
+        'email',
+        'name',
+        'displayName',
+        'role',
+        'active',
+        'createdBy',
+        'createdAt',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        hasRequiredFields(['role']) &&
+        data.role is string &&
+        data.role in validAdminRoles() &&
+        (!('uid' in data) || (data.uid is string && data.uid == userId && data.uid.size() >= 1 && data.uid.size() <= 128)) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        isValidOptionalString(data, 'name', 1, 120) &&
+        isValidOptionalString(data, 'displayName', 1, 120) &&
+        (!('active' in data) || data.active is bool) &&
+        isValidOptionalString(data, 'createdBy', 1, 128) &&
+        (!('createdAt' in data) || isValidDateOrTimestamp(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateOrTimestamp(data.updatedAt));
+    }
+
+    function isValidSelectionForm(data, formId) {
+      let allowedKeys = [
+        'id',
+        'title',
+        'slug',
+        'category',
+        'description',
+        'requirementsNote',
+        'status',
+        'quota',
+        'startDate',
+        'endDate',
+        'requireAiPreScreening',
+        'aiCriteria',
+        'fields',
+        'submissionCount',
+        'createdBy',
+        'createdAt',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        hasRequiredFields(['title', 'slug', 'status', 'fields']) &&
+        (!('id' in data) || (data.id is string && data.id == formId && data.id.size() >= 1 && data.id.size() <= 128)) &&
+        data.title is string && data.title.size() >= 3 && data.title.size() <= 200 &&
+        data.slug is string && data.slug.size() >= 3 && data.slug.size() <= 160 &&
+          data.slug.matches("^[a-z0-9-]+$") &&
+        isValidOptionalString(data, 'category', 2, 80) &&
+        isValidOptionalString(data, 'description', 0, 5000) &&
+        isValidOptionalString(data, 'requirementsNote', 0, 5000) &&
+        data.status is string && data.status in ['DRAFT', 'OPEN', 'CLOSED'] &&
+        (!('quota' in data) || (data.quota is int && data.quota >= 0 && data.quota <= 1000000)) &&
+        (!('startDate' in data) || isValidDateOrTimestamp(data.startDate)) &&
+        (!('endDate' in data) || isValidDateOrTimestamp(data.endDate)) &&
+        (!('requireAiPreScreening' in data) || data.requireAiPreScreening is bool) &&
+        isValidOptionalString(data, 'aiCriteria', 0, 5000) &&
+        data.fields is list && data.fields.size() >= 1 && data.fields.size() <= 100 &&
+        data.fields[0] is map && data.fields[0].keys().hasAll(['id', 'label', 'type']) &&
+        (!('submissionCount' in data) || (data.submissionCount is int && data.submissionCount >= 0 && data.submissionCount <= 1000000)) &&
+        isValidOptionalString(data, 'createdBy', 1, 150) &&
+        (!('createdAt' in data) || isValidDateOrTimestamp(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateOrTimestamp(data.updatedAt));
+    }
+
+    function isValidAiEvaluation(evalData) {
+      return evalData is map &&
+        evalData.keys().hasOnly([
+          'score',
+          'summary',
+          'strengths',
+          'gaps',
+          'recommendation',
+          'evaluatedAt'
+        ]) &&
+        evalData.keys().hasAll([
+          'score',
+          'summary',
+          'strengths',
+          'gaps',
+          'recommendation',
+          'evaluatedAt'
+        ]) &&
+        (evalData.score is int || evalData.score is float) &&
+          evalData.score >= 0 && evalData.score <= 100 &&
+        evalData.summary is string && evalData.summary.size() <= 3000 &&
+        evalData.strengths is list && evalData.strengths.size() <= 20 &&
+        evalData.gaps is list && evalData.gaps.size() <= 20 &&
+        evalData.recommendation is string &&
+          evalData.recommendation in ['DIREKOMENDASIKAN', 'PERLU_TINJAUAN', 'KURANG_SESUAI'] &&
+        isValidDateOrTimestamp(evalData.evaluatedAt);
+    }
+
+    function isValidSelectionSubmission(data, submissionId) {
+      let allowedKeys = [
+        'id',
+        'registrationCode',
+        'formId',
+        'formTitle',
+        'formSlug',
+        'applicantName',
+        'applicantEmail',
+        'applicantPhone',
+        'answers',
+        'files',
+        'status',
+        'reviewerNote',
+        'reviewedBy',
+        'reviewedAt',
+        'aiEvaluation',
+        'createdAt',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedKeys) &&
+        hasRequiredFields([
+          'registrationCode',
+          'formId',
+          'formTitle',
+          'formSlug',
+          'applicantName',
+          'applicantEmail',
+          'applicantPhone',
+          'answers',
+          'files',
+          'status'
+        ]) &&
+        (!('id' in data) || (data.id is string && data.id == submissionId && data.id.size() >= 1 && data.id.size() <= 128)) &&
+        data.registrationCode is string && data.registrationCode.size() >= 4 && data.registrationCode.size() <= 40 &&
+        data.formId is string && data.formId.size() >= 1 && data.formId.size() <= 128 &&
+        data.formTitle is string && data.formTitle.size() >= 1 && data.formTitle.size() <= 200 &&
+        data.formSlug is string && data.formSlug.size() >= 1 && data.formSlug.size() <= 160 &&
+        data.applicantName is string && data.applicantName.size() >= 2 && data.applicantName.size() <= 150 &&
+        isValidEmail(data.applicantEmail) &&
+        data.applicantPhone is string && data.applicantPhone.size() >= 6 && data.applicantPhone.size() <= 30 &&
+        data.answers is map && data.answers.size() <= 100 &&
+        data.files is list && data.files.size() <= 30 &&
+        data.status is string && data.status in ['SUBMITTED', 'REVIEWING', 'ACCEPTED', 'REJECTED'] &&
+        isValidOptionalString(data, 'reviewerNote', 0, 5000) &&
+        isValidOptionalString(data, 'reviewedBy', 0, 150) &&
+        (!('reviewedAt' in data) || isValidDateOrTimestamp(data.reviewedAt)) &&
+        (!('aiEvaluation' in data) || isValidAiEvaluation(data.aiEvaluation)) &&
+        (!('createdAt' in data) || isValidDateOrTimestamp(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateOrTimestamp(data.updatedAt));
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. users/{userId}: Role & staff registry for pendaftaran-seleksi
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSuperAdmin() && isValidUser(request.resource.data, userId);
+      allow update: if isSuperAdmin() &&
+        isValidUser(request.resource.data, userId) &&
+        areImmutableFieldsUnchanged(['uid', 'createdAt', 'createdBy']);
+      allow delete: if isSuperAdmin() && request.auth.uid != userId;
+    }
+
+    // 2. selection_forms/{formId}: Public catalog of OPEN/CLOSED forms; admin managed
+    match /selection_forms/{formId} {
+      allow read: if (resource != null && resource.data.status in ['OPEN', 'CLOSED']) ||
+        isSelectionAdmin();
+      allow create: if isSelectionAdmin() &&
+        isValidSelectionForm(request.resource.data, formId);
+      allow update: if isSelectionAdmin() &&
+        isValidSelectionForm(request.resource.data, formId) &&
+        areImmutableFieldsUnchanged(['id', 'createdAt', 'createdBy']);
+      allow delete: if isSelectionAdmin();
+    }
+
+    // 3. selection_submissions/{submissionId}: Applicant PII strictly restricted to selection admins
+    //    (Public submissions and status checks must go through /api/submissions via firebase-admin)
+    match /selection_submissions/{submissionId} {
+      allow read: if isSelectionAdmin();
+      allow create: if isSelectionAdmin() &&
+        isValidSelectionSubmission(request.resource.data, submissionId);
+      allow update: if isSelectionAdmin() &&
+        isValidSelectionSubmission(request.resource.data, submissionId) &&
+        areImmutableFieldsUnchanged(['id', 'registrationCode', 'formId', 'createdAt']);
+      allow delete: if isSelectionAdmin();
+    }
+
+    // ===============================================================
+    // Default Deny All Other Paths
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

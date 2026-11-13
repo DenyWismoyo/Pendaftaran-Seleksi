@@ -29,14 +29,11 @@ Panitia (Firebase Auth Bearer Token)
 ```
 
 ## 2. Isolasi Resource Firebase
-- Firestore root collections:
-  - `selection_forms`
-  - `selection_submissions`
-- Cloud Storage prefix:
-  - `selection_uploads/{formId}/{fieldId}/{timestamp}-{safeFileName}`
-- Inisialisasi Admin SDK di `src/lib/firebaseAdmin.ts` mendukung 4 sumber kredensial
-  berurutan: `service-account-katalog.json` (lokal), `FIREBASE_SERVICE_ACCOUNT_KEY`
-  (JSON env), kombinasi `FIREBASE_ADMIN_*`, dan ADC fallback.
+- Database Firestore khusus: `pendaftaran-seleksi` (Standard Edition, `asia-southeast2`)
+  - Koleksi: `selection_forms`, `selection_submissions`, `users` (akun panitia terpisah)
+- Bucket Cloud Storage khusus: `gs://seleksi-solo-technopark` (`asia-southeast2`)
+  - Prefix path: `selection_uploads/{formId}/{fieldId}/{timestamp}-{safeFileName}`
+- Inisialisasi Admin SDK di `src/lib/firebaseAdmin.ts` menggunakan `getFirestore(app, SELEKSI_DATABASE_ID)` dan `getStorage(app).bucket(SELEKSI_STORAGE_BUCKET)`, dengan urutan kredensial: `service-account-katalog.json` (lokal), `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON env), kombinasi `FIREBASE_ADMIN_*`, dan ADC fallback.
 
 ## 3. Checklist Menambah Fitur Backend Baru
 1. Tambahkan atau perbarui schema Zod di `src/types/selection.ts`.
@@ -48,3 +45,4 @@ Panitia (Firebase Auth Bearer Token)
    npx tsc --noEmit
    npm run build
    ```
+
